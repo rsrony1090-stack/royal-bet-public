@@ -193,6 +193,7 @@ let stateCollection;
 let providerTestCollection;
 let aviatorRoundCollection;
 let aviatorGlobalCollection;
+let aviatorCrashHistoryCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -202,6 +203,8 @@ async function initializeDatabase() {
   providerTestCollection = database.collection("provider_test_imports");
   aviatorRoundCollection = database.collection("aviator_rounds");
   aviatorGlobalCollection = database.collection("aviator_global_round");
+  aviatorCrashHistoryCollection = database.collection("aviator_crash_history");
+  await aviatorCrashHistoryCollection.createIndex({ roundId: 1 }, { unique: true });
   await aviatorRoundCollection.createIndex({ userId: 1, settledAt: -1 });
   await aviatorGlobalCollection.createIndex({ roundId: 1 });
   await providerTestCollection.createIndex({ eventId: 1 }, { unique: true });
@@ -715,7 +718,6 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
 const AVIATOR_GROWTH_RATE = 0.13;
 const AVIATOR_BET_SECONDS = 5;
 const AVIATOR_NEXT_ROUND_SECONDS = 5;
-let aviatorGlobalCollection;
 
 function aviatorMultiplierAt(startedAt, now = Date.now()) {
   return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
@@ -775,6 +777,11 @@ async function tickAviatorRound() {
         { $set: { phase: "crashed", finishedAt: new Date(now).toISOString(), finalMultiplier: round.crashAt } }
       );
       if (crashed.modifiedCount) {
+        await aviatorCrashHistoryCollection.updateOne(
+          { roundId: round.roundId },
+          { $setOnInsert: { roundId: round.roundId, finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt } },
+          { upsert: true }
+        );
         for (const bet of (round.bets || [])) {
           if (bet.status === "active") await saveAviatorHistory(round, bet, "lost", round.crashAt, 0);
         }
@@ -795,6 +802,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
     const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).limit(20).toArray();
+    const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
     const now = Date.now();
     res.json({
       round: {
@@ -808,6 +816,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         players: (round.bets || []).length
       },
       ownBet: ownBet ? { stake: ownBet.stake, status: ownBet.status, payout: ownBet.payout || 0 } : null,
+      crashHistory,
       history
     });
   } catch (error) { next(error); }
