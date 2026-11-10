@@ -700,6 +700,88 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
   }
 });
 
+
+// THERUNDOWN API — ADMIN-ONLY TEST ROUTES
+// Free-plan data stays private for internal testing; do not expose it on public match pages.
+const rundownCache = new Map();
+let rundownLastRequestAt = 0;
+
+async function rundownGet(url) {
+  const apiKey = process.env.THERUNDOWN_API_KEY;
+  if (!apiKey) {
+    const error = new Error("THERUNDOWN_API_KEY is not configured");
+    error.status = 503;
+    throw error;
+  }
+
+  const cached = rundownCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const waitMs = Math.max(0, 1100 - (Date.now() - rundownLastRequestAt));
+  if (waitMs) await new Promise(resolve => setTimeout(resolve, waitMs));
+  rundownLastRequestAt = Date.now();
+
+  const response = await fetch(url, {
+    headers: { "X-TheRundown-Key": apiKey },
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const raw = await response.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { data = { raw }; }
+
+  if (!response.ok) {
+    const error = new Error(data?.message || data?.error || `TheRundown returned HTTP ${response.status}`);
+    error.status = response.status === 429 ? 429 : 502;
+    error.providerStatus = response.status;
+    throw error;
+  }
+
+  const result = {
+    data,
+    usage: {
+      datapoints: response.headers.get("x-datapoints"),
+      remaining: response.headers.get("x-datapoints-remaining"),
+      delaySeconds: response.headers.get("x-data-delay-seconds")
+    }
+  };
+  rundownCache.set(url, { data: result, expiresAt: Date.now() + 60000 });
+  return result;
+}
+
+app.get("/api/admin/provider/sports", auth, admin, async (req, res, next) => {
+  try {
+    const result = await rundownGet("https://therundown.io/api/v2/sports");
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, res, next) => {
+  try {
+    const { sportId, date } = req.params;
+    if (!/^\\d+$/.test(sportId) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {
+      return res.status(400).json({ error: "Use a numeric sport ID and date in YYYY-MM-DD format" });
+    }
+    const parsedDate = new Date(date + "T00:00:00Z");
+    if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ error: "Invalid date" });
+    }
+
+    const url = new URL(`https://therundown.io/api/v2/sports/${sportId}/events/${date}`);
+    url.searchParams.set("market_ids", "1,2,3,41,42,43");
+    url.searchParams.set("affiliate_ids", "3,19,23");
+    url.searchParams.set("main_line", "true");
+    url.searchParams.set("hide_closed", "true");
+
+    const result = await rundownGet(url.toString());
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ERROR HANDLER
 app.use((error, req, res, next) => {
   console.error("API Error:", error);
