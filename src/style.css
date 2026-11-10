@@ -46,3 +46,32 @@
 .aviatorLiveRow em{font-style:normal;font-size:9px;font-weight:900;white-space:nowrap}
 .status.live{color:#43d7a2}
 @media(max-width:680px){.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
+
+
+/* ROYAL FLIGHT full-screen game layout */
+.aviatorShell{display:block;padding:clamp(8px,1.5vw,18px);background:linear-gradient(145deg,#081522,#112a3c);border-radius:18px}
+.aviatorGame{width:100%}
+.aviatorSky{height:clamp(300px,48vw,560px);min-height:300px;border-radius:14px;background:radial-gradient(ellipse at 55% 85%,#1e5272 0%,#102c45 48%,#071625 100%)}
+.aviatorGrid{position:absolute;inset:48% -20% -45%;background-image:linear-gradient(#2e678055 1px,transparent 1px),linear-gradient(90deg,#2e678055 1px,transparent 1px);background-size:42px 42px;transform:perspective(240px) rotateX(58deg);transform-origin:top;opacity:.5}
+.aviatorSky.crashed{animation:skyCrash .48s ease-out 1;background:radial-gradient(ellipse at 60% 90%,#672a37,#251927 58%,#100f1d)}
+.aviatorSky.crashed .aviatorPlane{animation:planeCrash .85s ease-in forwards}
+.aviatorSky.crashed .flightLine{stroke:#ff6574;filter:drop-shadow(0 0 12px #ff334f);animation:none;stroke-dashoffset:0}
+.aviatorSky:not(.crashed) .aviatorPlane{animation:planeFlight 8s cubic-bezier(.35,.05,.6,1) infinite}
+.aviatorSky:not(.crashed) .flightLine{animation:drawFlight 8s linear infinite}
+.aviatorBetPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.aviatorBetPanel{min-width:0;background:linear-gradient(160deg,#172c3b,#101f2c);border:1px solid #315064}
+.aviatorControlBar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:12px 0 2px;padding:12px;border:1px solid #294458;border-radius:10px;background:#0a1b29}
+.aviatorControlBar label{margin-right:auto;color:#b8cbd8;font-size:11px;font-weight:800;display:flex;align-items:center;gap:8px}
+.aviatorControlBar input{accent-color:#31d69b}
+.aviatorControlBar button{border:1px solid #3a5c70;border-radius:8px;background:#142d3e;color:#d8e9f4;padding:9px 12px;font-size:10px;font-weight:800;cursor:pointer}
+.aviatorLiveGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.aviatorLiveCard{overflow:hidden}
+.aviatorHistoryHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.aviatorHistoryHead h3{font-size:13px}
+.aviatorHistoryHead span{font-size:9px}
+.aviatorSky.crashed .aviatorMultiplier{animation:crashFlash .35s ease-in-out 2}
+@keyframes skyCrash{0%{transform:translateX(0)}20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes planeCrash{0%{left:88%;top:8%;transform:rotate(-25deg) scale(1);opacity:1}35%{left:82%;top:28%;transform:rotate(35deg) scale(.95)}100%{left:72%;top:115%;transform:rotate(115deg) scale(.35);opacity:0}}
+@keyframes crashFlash{0%,100%{opacity:1}50%{opacity:.35;transform:scale(1.08)}}
+@media(max-width:900px){.aviatorLiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.aviatorShell{padding:7px}.aviatorSky{height:340px;min-height:340px}.aviatorBetPanels{grid-template-columns:1fr}.aviatorControlBar{justify-content:stretch}.aviatorControlBar label{flex-basis:100%;margin:0}.aviatorControlBar button{flex:1}.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
