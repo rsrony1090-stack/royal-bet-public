@@ -830,9 +830,88 @@ app.post("/api/admin/provider/import-test", auth, admin, async (req, res, next) 
   }
 });
 
+function americanToDecimal(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return Number((n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n)).toFixed(3));
+}
+
+function normalizeProviderEvent(row) {
+  const ev = row.event || {};
+  const teams = ev.teams || [];
+  const away = teams.find(t => t.is_away) || teams[0] || {};
+  const home = teams.find(t => t.is_home) || teams[1] || {};
+  const markets = (ev.markets || []).map(market => {
+    const options = [];
+    (market.participants || []).forEach(participant => {
+      (participant.lines || []).forEach(line => {
+        const prices = Object.entries(line.prices || {});
+        const validPrices = prices.map(([source, quote]) => ({
+          source,
+          american: Number(quote?.price ?? quote),
+          decimal: americanToDecimal(quote?.price ?? quote)
+        })).filter(x => x.decimal !== null);
+        if (!validPrices.length) return;
+        const quote = validPrices[0];
+        const lineText = line.value == null ? "" : " " + line.value;
+        options.push({
+          label: String(participant.name || "Outcome") + lineText,
+          odd: quote.decimal,
+          americanOdds: quote.american,
+          line: line.value ?? null,
+          source: quote.source,
+          availableSources: validPrices.length
+        });
+      });
+    });
+    return {
+      name: String(market.name || market.market_description || "Market"),
+      options
+    };
+  }).filter(m => m.options.length);
+  return {
+    eventId: row.eventId,
+    sport: row.sportName,
+    league: ev.schedule?.league_name || "Unknown league",
+    home: [home.name, home.mascot].filter(Boolean).join(" "),
+    away: [away.name, away.mascot].filter(Boolean).join(" "),
+    start: ev.event_date || null,
+    status: ev.score?.event_status || "Scheduled",
+    markets,
+    normalizedAt: new Date().toISOString(),
+    format: "royalbet-demo-market-v1"
+  };
+}
+
+app.post("/api/admin/provider/normalize-tests", auth, admin, async (req, res, next) => {
+  try {
+    const rows = await providerTestCollection.find({}).toArray();
+    let normalized = 0;
+    let withoutMarkets = 0;
+    for (const row of rows) {
+      const demoMarket = normalizeProviderEvent(row);
+      if (!demoMarket.markets.length) withoutMarkets++;
+      await providerTestCollection.updateOne(
+        { eventId: row.eventId },
+        { $set: { demoMarket } }
+      );
+      normalized++;
+    }
+    res.json({
+      ok: true,
+      normalized,
+      withoutMarkets,
+      storage: "admin-only test collection",
+      publicMatchesChanged: false
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/admin/provider/imported-tests", auth, admin, async (req, res, next) => {
   try {
-    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, event: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
+    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, event: 1, demoMarket: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
     res.json({ count: rows.length, events: rows });
   } catch (error) {
     next(error);
