@@ -864,19 +864,19 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
 });
 app.post("/api/aviator/cashout", auth, async (req, res, next) => {
   try {
-    await tickAviatorRound();
+    // Do not run the round ticker before processing a cashout: first read the
+    // current flying round and atomically claim the active bet.
     const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
     if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
     const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active");
     if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
-    const elapsed = (Date.now() - new Date(round.flightStartedAt).getTime()) / 1000;
-    const multiplier = aviatorMultiplierAt(round.flightStartedAt);
-    // Use the server's exact crash timestamp only. The displayed multiplier is
-    // rounded to 2 decimals and can visually reach the crash value slightly early.
-    if (elapsed >= round.crashAtSeconds) {
+    const cashoutTime = Date.now();
+    const crashDeadline = new Date(round.flightStartedAt).getTime() + Number(round.crashAtSeconds) * 1000;
+    if (cashoutTime >= crashDeadline) {
       await tickAviatorRound();
       return res.status(409).json({ error: "Too late — this round has crashed." });
     }
+    const multiplier = aviatorMultiplierAt(round.flightStartedAt, cashoutTime);
     const payout = Math.floor(bet.stake * multiplier);
     const updated = await aviatorGlobalCollection.updateOne(
       { _id: "current", roundId: round.roundId, phase: "flying", "bets": { $elemMatch: { userId: req.user.id, status: "active" } } },
