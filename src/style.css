@@ -77,3 +77,8 @@
 @media(max-width:640px){.aviatorShell{padding:7px}.aviatorSky{height:340px;min-height:340px}.aviatorBetPanels{grid-template-columns:1fr}.aviatorControlBar{justify-content:stretch}.aviatorControlBar label{flex-basis:100%;margin:0}.aviatorControlBar button{flex:1}.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
 
 .aviatorFairnessCard{background:#151f2d;border:1px solid #3b5a70;border-radius:10px;padding:15px;margin:16px 0;color:#dce7ef}.aviatorFairnessCard p{font-size:11px;line-height:1.6;color:#aab9c8}.aviatorFairnessCard>small,.aviatorFairnessLatest small{display:block;color:#91a6b9;font-size:10px;margin:7px 0}.aviatorFairnessCard code{display:block;overflow-wrap:anywhere;background:#0b1420;border:1px solid #293e51;border-radius:6px;padding:9px;color:#70d9b2;font-size:10px}.aviatorFairnessLatest{display:grid;gap:7px;border-top:1px solid #304456;margin-top:12px;padding-top:12px}.aviatorFairnessLatest button{width:max-content;max-width:100%;font-size:10px}.aviatorFairnessLatest .status{font-size:11px}
+
+/* Smooth frame-synced ROYAL FLIGHT motion */
+.aviatorPlane{will-change:transform;backface-visibility:hidden;transition:none!important;left:8%;top:76%;}
+.aviatorSky:not(.crashed) .flightLine{animation:none!important;will-change:stroke-dashoffset;}
+.aviatorMultiplier{font-variant-numeric:tabular-nums;will-change:contents;}
