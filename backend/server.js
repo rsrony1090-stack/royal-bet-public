@@ -850,7 +850,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         countdownMs: round.phase === "betting" ? Math.max(0, new Date(round.bettingEndsAt).getTime() - now) : 0,
         multiplier: round.phase === "flying" ? aviatorMultiplierAt(round.flightStartedAt, now) : (round.finalMultiplier || 1),
         finalMultiplier: round.finalMultiplier || null,
-        players: (round.bets || []).length
+        players: new Set((round.bets || []).map(b => b.userId)).size
       },
       ownBet: ownBet ? { ...ownBet } : null,
       ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b })),
