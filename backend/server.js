@@ -770,7 +770,7 @@ app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, re
     }
 
     const url = new URL(`https://therundown.io/api/v2/sports/${sportId}/events/${date}`);
-    url.searchParams.set("market_ids", "1,2,3,41,42,43");
+    url.searchParams.set("market_ids", "1,2,3");
     url.searchParams.set("affiliate_ids", "3,19,23");
     url.searchParams.set("main_line", "true");
     url.searchParams.set("hide_closed", "true");
@@ -786,8 +786,8 @@ app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, re
 app.use((error, req, res, next) => {
   console.error("API Error:", error);
 
-  res.status(500).json({
-    error: "Server error. Please try again."
+  res.status(error.status || 500).json({
+    error: error.status ? error.message : "Server error. Please try again."
   });
 });
 
