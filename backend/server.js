@@ -853,7 +853,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         players: new Set((round.bets || []).map(b => b.userId)).size
       },
       ownBet: ownBet ? { ...ownBet } : null,
-      ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b })),
+      ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b, panel: b.panel || 1 })),
       livePlayers: [...new Map((round.bets || []).map(b => [b.userId, { player: "Player #" + String(b.userId).slice(-4), bets: (round.bets || []).filter(x => x.userId === b.userId).length }])).values()],
       liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), panel: b.panel || 1, stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
       topWins: (round.bets || []).filter(b => b.status === "won").sort((a,b) => (b.payout||0)-(a.payout||0)).slice(0,5).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0 })),
@@ -873,7 +873,7 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     if (!round || round.phase !== "betting") return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
     const panel = Number(req.body?.panel || 1);
     if (![1, 2].includes(panel)) return res.status(400).json({ error: "Choose bet panel 1 or 2." });
-    if ((round.bets || []).some(b => b.userId === req.user.id && b.panel === panel)) return res.status(409).json({ error: "This bet panel is already used in this round." });
+    if ((round.bets || []).some(b => b.userId === req.user.id && (b.panel || 1) === panel)) return res.status(409).json({ error: "This bet panel is already used in this round." });
     const db = await readDB();
     const user = db.users.find(u => u.id === req.user.id);
     if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
@@ -898,7 +898,7 @@ app.post("/api/aviator/cashout", auth, async (req, res, next) => {
     // current flying round and atomically claim the active bet.
     const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
     if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
-    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active" && (req.body?.betId ? b.betId === req.body.betId : b.panel === Number(req.body?.panel || 1)));
+    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active" && (req.body?.betId ? b.betId === req.body.betId : (b.panel || 1) === Number(req.body?.panel || 1)));
     if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
     const cashoutTime = Date.now();
     const crashDeadline = new Date(round.flightStartedAt).getTime() + Number(round.crashAtSeconds) * 1000;
