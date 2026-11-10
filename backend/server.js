@@ -754,9 +754,9 @@ function newAviatorRound(now = Date.now()) {
 }
 async function saveAviatorHistory(round, bet, status, multiplier, payout = 0) {
   await aviatorRoundCollection.updateOne(
-    { _id: round.roundId + "_" + bet.userId },
+    { _id: bet.betId || (round.roundId + "_" + bet.userId) },
     { $setOnInsert: {
-      _id: round.roundId + "_" + bet.userId,
+      _id: bet.betId || (round.roundId + "_" + bet.userId),
       roundId: round.roundId,
       userId: bet.userId,
       stake: bet.stake,
@@ -795,7 +795,7 @@ async function tickAviatorRound() {
         if (bet.status !== "active" || !target || currentMultiplier < target || target >= round.crashAt) continue;
         const payout = Math.floor(bet.stake * target);
         const won = await aviatorGlobalCollection.updateOne(
-          { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { userId: bet.userId, status: "active" } } },
+          { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
           { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": target, "bets.$.cashedOutAt": new Date(now).toISOString(), "bets.$.autoCashedOut": true } }
         );
         if (won.modifiedCount) {
@@ -836,7 +836,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
     await tickAviatorRound();
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
-    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).limit(20).toArray();
+    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).limit(100).toArray();
     const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
     const now = Date.now();
     res.json({
@@ -850,7 +850,8 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         finalMultiplier: round.finalMultiplier || null,
         players: (round.bets || []).length
       },
-      ownBet: ownBet ? { stake: ownBet.stake, status: ownBet.status, payout: ownBet.payout || 0, autoCashoutAt: ownBet.autoCashoutAt || null, autoCashedOut: !!ownBet.autoCashedOut, finalMultiplier: ownBet.finalMultiplier || null } : null,
+      ownBet: ownBet ? { ...ownBet } : null,
+      ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b })),
       liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
       topWins: (round.bets || []).filter(b => b.status === "won").sort((a,b) => (b.payout||0)-(a.payout||0)).slice(0,5).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0 })),
       crashHistory,
@@ -867,13 +868,15 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     if (!Number.isInteger(stake) || stake < 10 || stake > 5000) return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     if (!round || round.phase !== "betting") return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
-    if ((round.bets || []).some(b => b.userId === req.user.id)) return res.status(409).json({ error: "You already placed a bet in this round." });
+    const panel = Number(req.body?.panel || 1);
+    if (![1, 2].includes(panel)) return res.status(400).json({ error: "Choose bet panel 1 or 2." });
+    if ((round.bets || []).some(b => b.userId === req.user.id && b.panel === panel)) return res.status(409).json({ error: "This bet panel is already used in this round." });
     const db = await readDB();
     const user = db.users.find(u => u.id === req.user.id);
     if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
     user.points -= stake;
     await writeDB(db);
-    const bet = { userId: user.id, stake, status: "active", autoCashoutAt, placedAt: new Date().toISOString() };
+    const bet = { betId: crypto.randomUUID(), panel, userId: user.id, stake, status: "active", autoCashoutAt, placedAt: new Date().toISOString() };
     const result = await aviatorGlobalCollection.updateOne(
       { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, "bets.userId": { $ne: user.id } },
       { $push: { bets: bet } }
@@ -892,7 +895,7 @@ app.post("/api/aviator/cashout", auth, async (req, res, next) => {
     // current flying round and atomically claim the active bet.
     const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
     if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
-    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active");
+    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active" && (req.body?.betId ? b.betId === req.body.betId : b.panel === Number(req.body?.panel || 1)));
     if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
     const cashoutTime = Date.now();
     const crashDeadline = new Date(round.flightStartedAt).getTime() + Number(round.crashAtSeconds) * 1000;
@@ -903,7 +906,7 @@ app.post("/api/aviator/cashout", auth, async (req, res, next) => {
     const multiplier = aviatorMultiplierAt(round.flightStartedAt, cashoutTime);
     const payout = Math.floor(bet.stake * multiplier);
     const updated = await aviatorGlobalCollection.updateOne(
-      { _id: "current", roundId: round.roundId, phase: "flying", "bets": { $elemMatch: { userId: req.user.id, status: "active" } } },
+      { _id: "current", roundId: round.roundId, phase: "flying", "bets": { $elemMatch: { betId: bet.betId, status: "active" } } },
       { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": multiplier, "bets.$.cashedOutAt": new Date().toISOString() } }
     );
     if (!updated.modifiedCount) return res.status(409).json({ error: "Cash out was not accepted. Check the round status." });
