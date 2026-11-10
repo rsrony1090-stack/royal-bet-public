@@ -191,6 +191,7 @@ const seed = {
 let database;
 let stateCollection;
 let providerTestCollection;
+let aviatorRoundCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -198,6 +199,8 @@ async function initializeDatabase() {
   database = client.db("royalbet");
   stateCollection = database.collection("app_state");
   providerTestCollection = database.collection("provider_test_imports");
+  aviatorRoundCollection = database.collection("aviator_rounds");
+  await aviatorRoundCollection.createIndex({ userId: 1, createdAt: -1 });
   await providerTestCollection.createIndex({ eventId: 1 }, { unique: true });
 
   await stateCollection.updateOne(
@@ -703,6 +706,71 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
   }
 });
 
+
+
+// AVIATOR DEMO GAME API
+const AVIATOR_GROWTH_RATE = 0.13;
+function aviatorMultiplierAt(startedAt, now = Date.now()) {
+  return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
+}
+async function updateExpiredAviatorRound(round) {
+  if (round.status !== "active") return round;
+  const elapsed = (Date.now() - new Date(round.startedAt).getTime()) / 1000;
+  if (elapsed >= round.crashAtSeconds) {
+    round.status = "lost";
+    round.finalMultiplier = round.crashAt;
+    round.crashedAt = new Date().toISOString();
+    await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "lost", finalMultiplier: round.finalMultiplier, crashedAt: round.crashedAt } });
+  }
+  return round;
+}
+app.get("/api/aviator/state", auth, async (req, res, next) => {
+  try {
+    let round = await aviatorRoundCollection.findOne({ userId: req.user.id, status: "active" });
+    if (round) round = await updateExpiredAviatorRound(round);
+    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(20).project({ _id: 1, stake: 1, status: 1, finalMultiplier: 1, payout: 1, createdAt: 1 }).toArray();
+    res.json({ activeRound: round && round.status === "active" ? { id: round._id, stake: round.stake, startedAt: round.startedAt, multiplier: aviatorMultiplierAt(round.startedAt) } : null, history });
+  } catch (error) { next(error); }
+});
+app.post("/api/aviator/start", auth, async (req, res, next) => {
+  try {
+    const stake = Number(req.body?.stake);
+    if (!Number.isInteger(stake) || stake < 10 || stake > 5000) return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
+    const active = await aviatorRoundCollection.findOne({ userId: req.user.id, status: "active" });
+    if (active) return res.status(409).json({ error: "Finish your active round first" });
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.id);
+    if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
+    user.points -= stake;
+    await writeDB(db);
+    const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+    const crashAt = Number(Math.max(1.05, Math.min(50, 0.97 / Math.max(0.0001, 1 - random))).toFixed(2));
+    const startedAt = new Date().toISOString();
+    const round = { _id: "av_" + crypto.randomUUID(), userId: user.id, stake, crashAt, crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE, startedAt, createdAt: startedAt, status: "active" };
+    await aviatorRoundCollection.insertOne(round);
+    res.json({ round: { id: round._id, stake, startedAt, multiplier: 1 }, user: safeUser(user) });
+  } catch (error) { next(error); }
+});
+app.post("/api/aviator/cashout", auth, async (req, res, next) => {
+  try {
+    const round = await aviatorRoundCollection.findOne({ _id: String(req.body?.roundId || ""), userId: req.user.id, status: "active" });
+    if (!round) return res.status(404).json({ error: "No active round found" });
+    const elapsed = (Date.now() - new Date(round.startedAt).getTime()) / 1000;
+    const multiplier = Number(Math.exp(Math.max(0, elapsed) * AVIATOR_GROWTH_RATE).toFixed(2));
+    if (elapsed >= round.crashAtSeconds || multiplier >= round.crashAt) {
+      await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "lost", finalMultiplier: round.crashAt, crashedAt: new Date().toISOString() } });
+      const db = await readDB();
+      return res.json({ result: "lost", round: { id: round._id, stake: round.stake, status: "lost", finalMultiplier: round.crashAt }, user: safeUser(db.users.find(u => u.id === req.user.id)) });
+    }
+    const payout = Math.floor(round.stake * multiplier);
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.id);
+    user.points += payout;
+    await writeDB(db);
+    await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "won", finalMultiplier: multiplier, payout, cashedOutAt: new Date().toISOString() } });
+    res.json({ result: "won", round: { id: round._id, stake: round.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(user) });
+  } catch (error) { next(error); }
+});
 
 // THERUNDOWN API — ADMIN-ONLY TEST ROUTES
 // Free-plan data stays private for internal testing; do not expose it on public match pages.
