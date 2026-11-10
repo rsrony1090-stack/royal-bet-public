@@ -832,7 +832,7 @@ app.post("/api/admin/provider/import-test", auth, admin, async (req, res, next) 
 
 app.get("/api/admin/provider/imported-tests", auth, admin, async (req, res, next) => {
   try {
-    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
+    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, event: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
     res.json({ count: rows.length, events: rows });
   } catch (error) {
     next(error);
