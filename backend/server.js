@@ -761,7 +761,7 @@ app.get("/api/admin/provider/sports", auth, admin, async (req, res, next) => {
 app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, res, next) => {
   try {
     const { sportId, date } = req.params;
-    if (!/^\\d+$/.test(sportId) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {
+    if (!/^\d+$/.test(sportId) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: "Use a numeric sport ID and date in YYYY-MM-DD format" });
     }
     const parsedDate = new Date(date + "T00:00:00Z");
