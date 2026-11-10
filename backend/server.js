@@ -723,8 +723,23 @@ function aviatorMultiplierAt(startedAt, now = Date.now()) {
   return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
 }
 function newAviatorRound(now = Date.now()) {
+  // Demo crash distribution: mostly regular rounds, with occasional rare high multipliers.
   const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-  const crashAt = Number((1.35 + Math.pow(random, 2) * 8.65).toFixed(2));
+  let crashAt;
+  if (random < 0.85) {
+    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+    crashAt = 1.35 + Math.pow(r, 2) * 8.65;       // 85%: 1.35x–10x
+  } else if (random < 0.97) {
+    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+    crashAt = 10 + r * 15;                        // 12%: 10x–25x
+  } else if (random < 0.997) {
+    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+    crashAt = 25 + r * 75;                        // 2.7%: 25x–100x
+  } else {
+    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+    crashAt = 100 + r * 400;                      // 0.3%: 100x–500x
+  }
+  crashAt = Number(crashAt.toFixed(2));
   const createdAt = new Date(now).toISOString();
   return {
     roundId: "av_" + crypto.randomUUID(),
