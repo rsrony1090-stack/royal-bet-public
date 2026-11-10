@@ -56,7 +56,7 @@
 .aviatorSky.crashed{animation:skyCrash .48s ease-out 1;background:radial-gradient(ellipse at 60% 90%,#672a37,#251927 58%,#100f1d)}
 .aviatorSky.crashed .aviatorPlane{animation:planeCrash .85s ease-in forwards}
 .aviatorSky.crashed .flightLine{stroke:#ff6574;filter:drop-shadow(0 0 12px #ff334f);animation:none;stroke-dashoffset:0}
-.aviatorSky:not(.crashed) .aviatorPlane{animation:planeFlight 8s cubic-bezier(.35,.05,.6,1) infinite}
+.aviatorSky:not(.crashed) .aviatorPlane{animation:none;transition:left .09s linear,top .09s linear;transform:rotate(-12deg)}
 .aviatorSky:not(.crashed) .flightLine{animation:drawFlight 8s linear infinite}
 .aviatorBetPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
 .aviatorBetPanel{min-width:0;background:linear-gradient(160deg,#172c3b,#101f2c);border:1px solid #315064}
@@ -71,7 +71,7 @@
 .aviatorHistoryHead span{font-size:9px}
 .aviatorSky.crashed .aviatorMultiplier{animation:crashFlash .35s ease-in-out 2}
 @keyframes skyCrash{0%{transform:translateX(0)}20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}100%{transform:translateX(0)}}
-@keyframes planeCrash{0%{left:88%;top:8%;transform:rotate(-25deg) scale(1);opacity:1}35%{left:82%;top:28%;transform:rotate(35deg) scale(.95)}100%{left:72%;top:115%;transform:rotate(115deg) scale(.35);opacity:0}}
+@keyframes planeCrash{0%{transform:rotate(-12deg) scale(1);opacity:1}35%{transform:rotate(35deg) scale(.95)}100%{transform:translate(110px,260px) rotate(115deg) scale(.35);opacity:0}}
 @keyframes crashFlash{0%,100%{opacity:1}50%{opacity:.35;transform:scale(1.08)}}
 @media(max-width:900px){.aviatorLiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.aviatorShell{padding:7px}.aviatorSky{height:340px;min-height:340px}.aviatorBetPanels{grid-template-columns:1fr}.aviatorControlBar{justify-content:stretch}.aviatorControlBar label{flex-basis:100%;margin:0}.aviatorControlBar button{flex:1}.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
