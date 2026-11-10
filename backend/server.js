@@ -763,6 +763,8 @@ async function saveAviatorHistory(round, bet, status, multiplier, payout = 0) {
       status,
       finalMultiplier: multiplier,
       payout,
+      panel: bet.panel || 1,
+      betId: bet.betId || null,
       autoCashedOut: !!bet.autoCashedOut,
       autoCashoutAt: bet.autoCashoutAt || null,
       createdAt: round.createdAt,
@@ -836,7 +838,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
     await tickAviatorRound();
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
-    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).limit(100).toArray();
+    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).toArray();
     const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
     const now = Date.now();
     res.json({
@@ -852,7 +854,8 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
       },
       ownBet: ownBet ? { ...ownBet } : null,
       ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b })),
-      liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
+      livePlayers: [...new Map((round.bets || []).map(b => [b.userId, { player: "Player #" + String(b.userId).slice(-4), bets: (round.bets || []).filter(x => x.userId === b.userId).length }])).values()],
+      liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), panel: b.panel || 1, stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
       topWins: (round.bets || []).filter(b => b.status === "won").sort((a,b) => (b.payout||0)-(a.payout||0)).slice(0,5).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0 })),
       crashHistory,
       history
