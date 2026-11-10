@@ -763,6 +763,8 @@ async function saveAviatorHistory(round, bet, status, multiplier, payout = 0) {
       status,
       finalMultiplier: multiplier,
       payout,
+      autoCashedOut: !!bet.autoCashedOut,
+      autoCashoutAt: bet.autoCashoutAt || null,
       createdAt: round.createdAt,
       settledAt: new Date().toISOString()
     } },
@@ -800,7 +802,7 @@ async function tickAviatorRound() {
           const db = await readDB();
           const user = db.users.find(u => u.id === bet.userId);
           if (user) { user.points += payout; await writeDB(db); }
-          await saveAviatorHistory(round, bet, "won", target, payout);
+          await saveAviatorHistory(round, { ...bet, autoCashedOut: true }, "won", target, payout);
         }
       }
     }
