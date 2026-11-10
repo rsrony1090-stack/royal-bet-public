@@ -744,7 +744,7 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     user.points -= stake;
     await writeDB(db);
     const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    const crashAt = Number(Math.max(1.05, Math.min(50, 0.97 / Math.max(0.0001, 1 - random))).toFixed(2));
+    const crashAt = Number((1.35 + Math.pow(random, 2) * 8.65).toFixed(2));
     const startedAt = new Date().toISOString();
     const round = { _id: "av_" + crypto.randomUUID(), userId: user.id, stake, crashAt, crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE, startedAt, createdAt: startedAt, status: "active" };
     await aviatorRoundCollection.insertOne(round);
