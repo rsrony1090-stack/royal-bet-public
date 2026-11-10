@@ -190,12 +190,15 @@ const seed = {
 
 let database;
 let stateCollection;
+let providerTestCollection;
 
 async function initializeDatabase() {
   await client.connect();
 
   database = client.db("royalbet");
   stateCollection = database.collection("app_state");
+  providerTestCollection = database.collection("provider_test_imports");
+  await providerTestCollection.createIndex({ eventId: 1 }, { unique: true });
 
   await stateCollection.updateOne(
     { _id: "main" },
@@ -777,6 +780,60 @@ app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, re
 
     const result = await rundownGet(url.toString());
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ADMIN-ONLY PROVIDER TEST IMPORT — stored separately from public matches.
+// This keeps free-plan provider data out of the public sportsbook endpoints.
+app.post("/api/admin/provider/import-test", auth, admin, async (req, res, next) => {
+  try {
+    const { events, sportId, sportName, date } = req.body || {};
+    if (!Array.isArray(events) || events.length === 0 || events.length > 100) {
+      return res.status(400).json({ error: "Provide 1–100 provider events" });
+    }
+
+    const docs = events.filter(ev => ev && (ev.event_id || ev.event_uuid)).map(ev => ({
+      eventId: String(ev.event_id || ev.event_uuid),
+      sportId: String(sportId || ""),
+      sportName: String(sportName || "Unknown sport"),
+      requestedDate: String(date || ""),
+      event: ev,
+      importedAt: new Date().toISOString(),
+      source: "TheRundown"
+    }));
+
+    if (!docs.length) {
+      return res.status(400).json({ error: "No valid event IDs found in provider response" });
+    }
+
+    let inserted = 0;
+    let existing = 0;
+    for (const doc of docs) {
+      try {
+        await providerTestCollection.updateOne(
+          { eventId: doc.eventId },
+          { $set: { ...doc, lastImportedAt: doc.importedAt }, $setOnInsert: { firstImportedAt: doc.importedAt } },
+          { upsert: true }
+        );
+        inserted++;
+      } catch (error) {
+        if (error.code === 11000) existing++;
+        else throw error;
+      }
+    }
+
+    res.json({ ok: true, saved: inserted, skipped: existing, total: docs.length, storage: "admin-only test collection", publicMatchesChanged: false });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/provider/imported-tests", auth, admin, async (req, res, next) => {
+  try {
+    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
+    res.json({ count: rows.length, events: rows });
   } catch (error) {
     next(error);
   }
