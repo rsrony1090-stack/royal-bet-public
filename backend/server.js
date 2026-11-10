@@ -191,7 +191,7 @@ const seed = {
 let database;
 let stateCollection;
 let providerTestCollection;
-let aviatorRoundCollection;
+let aviatorRoundCollection;\nlet aviatorGlobalCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -708,67 +708,158 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
 
 
 
-// AVIATOR DEMO GAME API
+// SHARED AVIATOR DEMO — one global round for every player
 const AVIATOR_GROWTH_RATE = 0.13;
+const AVIATOR_BET_SECONDS = 5;
+const AVIATOR_NEXT_ROUND_SECONDS = 5;
+let aviatorGlobalCollection;
+
 function aviatorMultiplierAt(startedAt, now = Date.now()) {
   return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
 }
-async function updateExpiredAviatorRound(round) {
-  if (round.status !== "active") return round;
-  const elapsed = (Date.now() - new Date(round.startedAt).getTime()) / 1000;
-  if (elapsed >= round.crashAtSeconds) {
-    round.status = "lost";
-    round.finalMultiplier = round.crashAt;
-    round.crashedAt = new Date().toISOString();
-    await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "lost", finalMultiplier: round.finalMultiplier, crashedAt: round.crashedAt } });
+function newAviatorRound(now = Date.now()) {
+  const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
+  const crashAt = Number((1.35 + Math.pow(random, 2) * 8.65).toFixed(2));
+  const createdAt = new Date(now).toISOString();
+  return {
+    roundId: "av_" + crypto.randomUUID(),
+    phase: "betting",
+    createdAt,
+    bettingEndsAt: new Date(now + AVIATOR_BET_SECONDS * 1000).toISOString(),
+    flightStartedAt: null,
+    crashAt,
+    crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE,
+    bets: []
+  };
+}
+async function saveAviatorHistory(round, bet, status, multiplier, payout = 0) {
+  await aviatorRoundCollection.updateOne(
+    { _id: round.roundId + "_" + bet.userId },
+    { $setOnInsert: {
+      _id: round.roundId + "_" + bet.userId,
+      roundId: round.roundId,
+      userId: bet.userId,
+      stake: bet.stake,
+      status,
+      finalMultiplier: multiplier,
+      payout,
+      createdAt: round.createdAt,
+      settledAt: new Date().toISOString()
+    } },
+    { upsert: true }
+  );
+}
+async function tickAviatorRound() {
+  const now = Date.now();
+  let round = await aviatorGlobalCollection.findOne({ _id: "current" });
+  if (!round) {
+    const initial = { _id: "current", ...newAviatorRound(now) };
+    await aviatorGlobalCollection.updateOne({ _id: "current" }, { $setOnInsert: initial }, { upsert: true });
+    return;
   }
-  return round;
+  if (round.phase === "betting" && now >= new Date(round.bettingEndsAt).getTime()) {
+    await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "betting" },
+      { $set: { phase: "flying", flightStartedAt: new Date(now).toISOString() } }
+    );
+    round = await aviatorGlobalCollection.findOne({ _id: "current" });
+  }
+  if (round?.phase === "flying") {
+    const elapsed = (now - new Date(round.flightStartedAt).getTime()) / 1000;
+    if (elapsed >= round.crashAtSeconds) {
+      const crashed = await aviatorGlobalCollection.updateOne(
+        { _id: "current", roundId: round.roundId, phase: "flying" },
+        { $set: { phase: "crashed", finishedAt: new Date(now).toISOString(), finalMultiplier: round.crashAt } }
+      );
+      if (crashed.modifiedCount) {
+        for (const bet of (round.bets || [])) {
+          if (bet.status === "active") await saveAviatorHistory(round, bet, "lost", round.crashAt, 0);
+        }
+      }
+      round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    }
+  }
+  if (round?.phase === "crashed" && now - new Date(round.finishedAt).getTime() >= AVIATOR_NEXT_ROUND_SECONDS * 1000) {
+    await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "crashed" },
+      { $set: newAviatorRound(now) }
+    );
+  }
 }
 app.get("/api/aviator/state", auth, async (req, res, next) => {
   try {
-    let round = await aviatorRoundCollection.findOne({ userId: req.user.id, status: "active" });
-    if (round) round = await updateExpiredAviatorRound(round);
-    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(20).project({ _id: 1, stake: 1, status: 1, finalMultiplier: 1, payout: 1, createdAt: 1 }).toArray();
-    res.json({ activeRound: round && round.status === "active" ? { id: round._id, stake: round.stake, startedAt: round.startedAt, multiplier: aviatorMultiplierAt(round.startedAt) } : null, history });
+    await tickAviatorRound();
+    const round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
+    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).limit(20).toArray();
+    const now = Date.now();
+    res.json({
+      round: {
+        id: round.roundId,
+        phase: round.phase,
+        bettingEndsAt: round.bettingEndsAt,
+        flightStartedAt: round.flightStartedAt,
+        countdownMs: round.phase === "betting" ? Math.max(0, new Date(round.bettingEndsAt).getTime() - now) : 0,
+        multiplier: round.phase === "flying" ? aviatorMultiplierAt(round.flightStartedAt, now) : (round.finalMultiplier || 1),
+        finalMultiplier: round.finalMultiplier || null,
+        players: (round.bets || []).length
+      },
+      ownBet: ownBet ? { stake: ownBet.stake, status: ownBet.status, payout: ownBet.payout || 0 } : null,
+      history
+    });
   } catch (error) { next(error); }
 });
 app.post("/api/aviator/start", auth, async (req, res, next) => {
   try {
+    await tickAviatorRound();
     const stake = Number(req.body?.stake);
     if (!Number.isInteger(stake) || stake < 10 || stake > 5000) return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
-    const active = await aviatorRoundCollection.findOne({ userId: req.user.id, status: "active" });
-    if (active) return res.status(409).json({ error: "Finish your active round first" });
+    const round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    if (!round || round.phase !== "betting") return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
+    if ((round.bets || []).some(b => b.userId === req.user.id)) return res.status(409).json({ error: "You already placed a bet in this round." });
     const db = await readDB();
     const user = db.users.find(u => u.id === req.user.id);
     if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
     user.points -= stake;
     await writeDB(db);
-    const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    const crashAt = Number((1.35 + Math.pow(random, 2) * 8.65).toFixed(2));
-    const startedAt = new Date().toISOString();
-    const round = { _id: "av_" + crypto.randomUUID(), userId: user.id, stake, crashAt, crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE, startedAt, createdAt: startedAt, status: "active" };
-    await aviatorRoundCollection.insertOne(round);
-    res.json({ round: { id: round._id, stake, startedAt, multiplier: 1 }, user: safeUser(user) });
+    const bet = { userId: user.id, stake, status: "active", placedAt: new Date().toISOString() };
+    const result = await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, "bets.userId": { $ne: user.id } },
+      { $push: { bets: bet } }
+    );
+    if (!result.modifiedCount) {
+      user.points += stake;
+      await writeDB(db);
+      return res.status(409).json({ error: "Betting just closed. Your demo points were returned." });
+    }
+    res.json({ ok: true, roundId: round.roundId, bet, user: safeUser(user) });
   } catch (error) { next(error); }
 });
 app.post("/api/aviator/cashout", auth, async (req, res, next) => {
   try {
-    const round = await aviatorRoundCollection.findOne({ _id: String(req.body?.roundId || ""), userId: req.user.id, status: "active" });
-    if (!round) return res.status(404).json({ error: "No active round found" });
-    const elapsed = (Date.now() - new Date(round.startedAt).getTime()) / 1000;
-    const multiplier = Number(Math.exp(Math.max(0, elapsed) * AVIATOR_GROWTH_RATE).toFixed(2));
+    await tickAviatorRound();
+    const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
+    if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
+    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active");
+    if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
+    const elapsed = (Date.now() - new Date(round.flightStartedAt).getTime()) / 1000;
+    const multiplier = aviatorMultiplierAt(round.flightStartedAt);
     if (elapsed >= round.crashAtSeconds || multiplier >= round.crashAt) {
-      await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "lost", finalMultiplier: round.crashAt, crashedAt: new Date().toISOString() } });
-      const db = await readDB();
-      return res.json({ result: "lost", round: { id: round._id, stake: round.stake, status: "lost", finalMultiplier: round.crashAt }, user: safeUser(db.users.find(u => u.id === req.user.id)) });
+      await tickAviatorRound();
+      return res.status(409).json({ error: "Too late — this round has crashed." });
     }
-    const payout = Math.floor(round.stake * multiplier);
+    const payout = Math.floor(bet.stake * multiplier);
+    const updated = await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "flying", "bets": { $elemMatch: { userId: req.user.id, status: "active" } } },
+      { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": multiplier, "bets.$.cashedOutAt": new Date().toISOString() } }
+    );
+    if (!updated.modifiedCount) return res.status(409).json({ error: "Cash out was not accepted. Check the round status." });
     const db = await readDB();
     const user = db.users.find(u => u.id === req.user.id);
     user.points += payout;
     await writeDB(db);
-    await aviatorRoundCollection.updateOne({ _id: round._id, status: "active" }, { $set: { status: "won", finalMultiplier: multiplier, payout, cashedOutAt: new Date().toISOString() } });
-    res.json({ result: "won", round: { id: round._id, stake: round.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(user) });
+    await saveAviatorHistory(round, bet, "won", multiplier, payout);
+    res.json({ result: "won", round: { id: round.roundId, stake: bet.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(user) });
   } catch (error) { next(error); }
 });
 
