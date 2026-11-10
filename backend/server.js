@@ -881,7 +881,7 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     await writeDB(db);
     const bet = { betId: crypto.randomUUID(), panel, userId: user.id, stake, status: "active", autoCashoutAt, placedAt: new Date().toISOString() };
     const result = await aviatorGlobalCollection.updateOne(
-      { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, "bets.userId": { $ne: user.id } },
+      { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, bets: { $not: { $elemMatch: { userId: user.id, panel } } } },
       { $push: { bets: bet } }
     );
     if (!result.modifiedCount) {
