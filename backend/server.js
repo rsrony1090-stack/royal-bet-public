@@ -191,7 +191,8 @@ const seed = {
 let database;
 let stateCollection;
 let providerTestCollection;
-let aviatorRoundCollection;\nlet aviatorGlobalCollection;
+let aviatorRoundCollection;
+let aviatorGlobalCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -200,7 +201,9 @@ async function initializeDatabase() {
   stateCollection = database.collection("app_state");
   providerTestCollection = database.collection("provider_test_imports");
   aviatorRoundCollection = database.collection("aviator_rounds");
-  await aviatorRoundCollection.createIndex({ userId: 1, createdAt: -1 });
+  aviatorGlobalCollection = database.collection("aviator_global_round");
+  await aviatorRoundCollection.createIndex({ userId: 1, settledAt: -1 });
+  await aviatorGlobalCollection.createIndex({ roundId: 1 });
   await providerTestCollection.createIndex({ eventId: 1 }, { unique: true });
 
   await stateCollection.updateOne(
@@ -1090,6 +1093,8 @@ app.use((error, req, res, next) => {
 async function startServer() {
   try {
     await initializeDatabase();
+    await tickAviatorRound();
+    setInterval(() => tickAviatorRound().catch(error => console.error("Aviator round tick failed:", error)), 250);
 
     app.listen(PORT, () => {
       console.log(`ROYAL BET API running on ${PORT}`);
