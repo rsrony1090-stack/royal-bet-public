@@ -722,24 +722,25 @@ const AVIATOR_NEXT_ROUND_SECONDS = 5;
 function aviatorMultiplierAt(startedAt, now = Date.now()) {
   return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
 }
-function newAviatorRound(now = Date.now()) {
-  // Demo crash distribution: mostly regular rounds, with occasional rare high multipliers.
-  const random = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-  let crashAt;
-  if (random < 0.85) {
-    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    crashAt = 1.35 + Math.pow(r, 2) * 8.65;       // 85%: 1.35x–10x
-  } else if (random < 0.97) {
-    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    crashAt = 10 + r * 15;                        // 12%: 10x–25x
-  } else if (random < 0.997) {
-    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    crashAt = 25 + r * 75;                        // 2.7%: 25x–100x
-  } else {
-    const r = crypto.randomBytes(4).readUInt32BE(0) / 0xffffffff;
-    crashAt = 100 + r * 400;                      // 0.3%: 100x–500x
-  }
-  crashAt = Number(crashAt.toFixed(2));
+function deriveAviatorCrash(serverSeed, clientSeed, nonce) {
+  const digest = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}`).digest("hex");
+  const fraction = parseInt(digest.slice(0, 13), 16) / 0x10000000000000;
+  const crashAt = fraction < 0.01 ? 1 : Math.min(500, Math.max(1, Math.floor(99 / (1 - fraction)) / 100));
+  return { digest, crashAt: Number(crashAt.toFixed(2)) };
+}
+function verifyAviatorRecord(record) {
+  if (!record?.serverSeed || !record?.serverSeedHash || !record?.clientSeed || record?.nonce == null) return { verified: false, error: "Verification data is incomplete." };
+  const calculatedHash = crypto.createHash("sha256").update(record.serverSeed).digest("hex");
+  const derived = deriveAviatorCrash(record.serverSeed, record.clientSeed, record.nonce);
+  const commitmentValid = calculatedHash === record.serverSeedHash;
+  const resultMatches = derived.crashAt === Number(record.finalMultiplier);
+  return { verified: commitmentValid && resultMatches, commitmentValid, resultMatches, calculatedHash, calculatedCrashAt: derived.crashAt, recordedCrashAt: Number(record.finalMultiplier), digest: derived.digest, algorithm: "HMAC-SHA256(serverSeed, clientSeed:nonce), first 52 bits, 1% instant crash, 99% RTP formula, 500x cap" };
+}
+function newAviatorRound(now = Date.now(), nonce = 1) {
+  const serverSeed = crypto.randomBytes(32).toString("hex");
+  const clientSeed = "royal-flight-shared-demo";
+  const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
+  const crashAt = deriveAviatorCrash(serverSeed, clientSeed, nonce).crashAt;
   const createdAt = new Date(now).toISOString();
   return {
     roundId: "av_" + crypto.randomUUID(),
@@ -747,6 +748,8 @@ function newAviatorRound(now = Date.now()) {
     createdAt,
     bettingEndsAt: new Date(now + AVIATOR_BET_SECONDS * 1000).toISOString(),
     flightStartedAt: null,
+    serverSeed, serverSeedHash, clientSeed, nonce,
+    algorithm: "ROYAL-FLIGHT-PF-1",
     crashAt,
     crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE,
     bets: []
@@ -816,7 +819,7 @@ async function tickAviatorRound() {
       if (crashed.modifiedCount) {
         await aviatorCrashHistoryCollection.updateOne(
           { roundId: round.roundId },
-          { $setOnInsert: { roundId: round.roundId, finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt } },
+          { $setOnInsert: { roundId: round.roundId, finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt, serverSeed: round.serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: round.clientSeed, nonce: round.nonce, algorithm: round.algorithm } },
           { upsert: true }
         );
         for (const bet of (round.bets || [])) {
@@ -829,7 +832,7 @@ async function tickAviatorRound() {
   if (round?.phase === "crashed" && now - new Date(round.finishedAt).getTime() >= AVIATOR_NEXT_ROUND_SECONDS * 1000) {
     await aviatorGlobalCollection.updateOne(
       { _id: "current", roundId: round.roundId, phase: "crashed" },
-      { $set: newAviatorRound(now) }
+      { $set: newAviatorRound(now, Number(round.nonce || 0) + 1) }
     );
   }
 }
@@ -850,6 +853,11 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         countdownMs: round.phase === "betting" ? Math.max(0, new Date(round.bettingEndsAt).getTime() - now) : 0,
         multiplier: round.phase === "flying" ? aviatorMultiplierAt(round.flightStartedAt, now) : (round.finalMultiplier || 1),
         finalMultiplier: round.finalMultiplier || null,
+        serverSeedHash: round.serverSeedHash || null,
+        serverSeed: round.phase === "crashed" ? (round.serverSeed || null) : null,
+        clientSeed: round.clientSeed || null,
+        nonce: round.nonce ?? null,
+        algorithm: round.algorithm || "legacy-unverified",
         players: new Set((round.bets || []).map(b => b.userId)).size
       },
       ownBet: ownBet ? { ...ownBet } : null,
@@ -860,6 +868,13 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
       crashHistory,
       history
     });
+  } catch (error) { next(error); }
+});
+app.get("/api/aviator/verify/:roundId", auth, async (req, res, next) => {
+  try {
+    const record = await aviatorCrashHistoryCollection.findOne({ roundId: String(req.params.roundId) });
+    if (!record) return res.status(404).json({ verified: false, error: "Completed round verification record not found." });
+    res.json({ roundId: record.roundId, ...verifyAviatorRecord(record) });
   } catch (error) { next(error); }
 });
 app.post("/api/aviator/start", auth, async (req, res, next) => {
