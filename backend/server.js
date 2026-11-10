@@ -856,7 +856,9 @@ app.post("/api/aviator/cashout", auth, async (req, res, next) => {
     if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
     const elapsed = (Date.now() - new Date(round.flightStartedAt).getTime()) / 1000;
     const multiplier = aviatorMultiplierAt(round.flightStartedAt);
-    if (elapsed >= round.crashAtSeconds || multiplier >= round.crashAt) {
+    // Use the server's exact crash timestamp only. The displayed multiplier is
+    // rounded to 2 decimals and can visually reach the crash value slightly early.
+    if (elapsed >= round.crashAtSeconds) {
       await tickAviatorRound();
       return res.status(409).json({ error: "Too late — this round has crashed." });
     }
