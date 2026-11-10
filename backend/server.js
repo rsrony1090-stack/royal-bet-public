@@ -786,6 +786,24 @@ async function tickAviatorRound() {
   }
   if (round?.phase === "flying") {
     const elapsed = (now - new Date(round.flightStartedAt).getTime()) / 1000;
+    const currentMultiplier = aviatorMultiplierAt(round.flightStartedAt, now);
+    if (elapsed < round.crashAtSeconds) {
+      for (const bet of (round.bets || [])) {
+        const target = Number(bet.autoCashoutAt || 0);
+        if (bet.status !== "active" || !target || currentMultiplier < target || target >= round.crashAt) continue;
+        const payout = Math.floor(bet.stake * target);
+        const won = await aviatorGlobalCollection.updateOne(
+          { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { userId: bet.userId, status: "active" } } },
+          { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": target, "bets.$.cashedOutAt": new Date(now).toISOString(), "bets.$.autoCashedOut": true } }
+        );
+        if (won.modifiedCount) {
+          const db = await readDB();
+          const user = db.users.find(u => u.id === bet.userId);
+          if (user) { user.points += payout; await writeDB(db); }
+          await saveAviatorHistory(round, bet, "won", target, payout);
+        }
+      }
+    }
     if (elapsed >= round.crashAtSeconds) {
       const crashed = await aviatorGlobalCollection.updateOne(
         { _id: "current", roundId: round.roundId, phase: "flying" },
@@ -830,7 +848,9 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         finalMultiplier: round.finalMultiplier || null,
         players: (round.bets || []).length
       },
-      ownBet: ownBet ? { stake: ownBet.stake, status: ownBet.status, payout: ownBet.payout || 0 } : null,
+      ownBet: ownBet ? { stake: ownBet.stake, status: ownBet.status, payout: ownBet.payout || 0, autoCashoutAt: ownBet.autoCashoutAt || null, autoCashedOut: !!ownBet.autoCashedOut, finalMultiplier: ownBet.finalMultiplier || null } : null,
+      liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
+      topWins: (round.bets || []).filter(b => b.status === "won").sort((a,b) => (b.payout||0)-(a.payout||0)).slice(0,5).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0 })),
       crashHistory,
       history
     });
@@ -840,6 +860,8 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
   try {
     await tickAviatorRound();
     const stake = Number(req.body?.stake);
+    const autoCashoutAt = req.body?.autoCashoutAt == null || req.body?.autoCashoutAt === "" ? null : Number(req.body.autoCashoutAt);
+    if (autoCashoutAt !== null && (!Number.isFinite(autoCashoutAt) || autoCashoutAt < 1.1 || autoCashoutAt > 1000)) return res.status(400).json({ error: "Auto cashout must be between 1.10x and 1000x" });
     if (!Number.isInteger(stake) || stake < 10 || stake > 5000) return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     if (!round || round.phase !== "betting") return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
@@ -849,7 +871,7 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
     user.points -= stake;
     await writeDB(db);
-    const bet = { userId: user.id, stake, status: "active", placedAt: new Date().toISOString() };
+    const bet = { userId: user.id, stake, status: "active", autoCashoutAt, placedAt: new Date().toISOString() };
     const result = await aviatorGlobalCollection.updateOne(
       { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, "bets.userId": { $ne: user.id } },
       { $push: { bets: bet } }
