@@ -1251,6 +1251,65 @@ app.get("/api/admin/provider/imported-tests", auth, admin, async (req, res, next
   }
 });
 
+// SPORTMONKS — live football data connection test (public match data only)
+let sportmonksTestCache = { expiresAt: 0, data: null };
+app.get("/api/sportmonks/test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    if (sportmonksTestCache.data && sportmonksTestCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksTestCache.data, cached: true });
+    }
+
+    const response = await fetch(
+      "https://api.sportmonks.com/v3/football/livescores?include=participants;scores;state;league",
+      {
+        headers: { Authorization: apiToken, Accept: "application/json" },
+        signal: AbortSignal.timeout(15000)
+      }
+    );
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Sportmonks API returned HTTP", response.status);
+      return res.status(response.status === 429 ? 429 : 502).json({
+        ok: false,
+        error: payload?.message || payload?.errors?.[0]?.detail || `Sportmonks API returned HTTP ${response.status}`
+      });
+    }
+
+    const fixtures = Array.isArray(payload.data) ? payload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks",
+      endpoint: "football/livescores",
+      liveMatches: fixtures.length,
+      sample: fixtures.slice(0, 5).map(fixture => ({
+        id: fixture.id,
+        name: fixture.name,
+        startingAt: fixture.starting_at,
+        state: fixture.state?.name || fixture.state_id || null,
+        league: fixture.league?.name || null,
+        participants: (fixture.participants || []).map(team => ({
+          name: team.name,
+          meta: team.meta?.location || null
+        })),
+        scores: fixture.scores || []
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+
+    sportmonksTestCache = { data: result, expiresAt: Date.now() + 30000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ERROR HANDLER
 app.use((error, req, res, next) => {
   console.error("API Error:", error);
