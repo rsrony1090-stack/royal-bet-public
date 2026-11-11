@@ -878,34 +878,85 @@ app.get("/api/aviator/verify/:roundId", auth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 app.post("/api/aviator/start", auth, async (req, res, next) => {
+  const session = client.startSession();
   try {
     await tickAviatorRound();
     const stake = Number(req.body?.stake);
     const autoCashoutAt = req.body?.autoCashoutAt == null || req.body?.autoCashoutAt === "" ? null : Number(req.body.autoCashoutAt);
-    if (autoCashoutAt !== null && (!Number.isFinite(autoCashoutAt) || autoCashoutAt < 1.1 || autoCashoutAt > 1000)) return res.status(400).json({ error: "Auto cashout must be between 1.10x and 1000x" });
-    if (!Number.isInteger(stake) || stake < 10 || stake > 5000) return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
+    if (autoCashoutAt !== null && (!Number.isFinite(autoCashoutAt) || autoCashoutAt < 1.1 || autoCashoutAt > 1000)) {
+      return res.status(400).json({ error: "Auto cashout must be between 1.10x and 1000x" });
+    }
+    if (!Number.isInteger(stake) || stake < 10 || stake > 5000) {
+      return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
+    }
+
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
-    if (!round || round.phase !== "betting") return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
+    if (!round || round.phase !== "betting" || new Date(round.bettingEndsAt).getTime() <= Date.now()) {
+      return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
+    }
+
     const panel = Number(req.body?.panel || 1);
     if (![1, 2].includes(panel)) return res.status(400).json({ error: "Choose bet panel 1 or 2." });
-    if ((round.bets || []).some(b => b.userId === req.user.id && (b.panel || 1) === panel)) return res.status(409).json({ error: "This bet panel is already used in this round." });
-    const db = await readDB();
-    const user = db.users.find(u => u.id === req.user.id);
-    if (!user || user.points < stake) return res.status(400).json({ error: "Not enough demo points" });
-    user.points -= stake;
-    await writeDB(db);
-    const bet = { betId: crypto.randomUUID(), panel, userId: user.id, stake, status: "active", autoCashoutAt, placedAt: new Date().toISOString() };
-    const result = await aviatorGlobalCollection.updateOne(
-      { _id: "current", roundId: round.roundId, phase: "betting", bettingEndsAt: { $gt: new Date().toISOString() }, bets: { $not: { $elemMatch: { userId: user.id, panel } } } },
-      { $push: { bets: bet } }
-    );
-    if (!result.modifiedCount) {
-      user.points += stake;
-      await writeDB(db);
-      return res.status(409).json({ error: "Betting just closed. Your demo points were returned." });
+    if ((round.bets || []).some(b => b.userId === req.user.id && (b.panel || 1) === panel)) {
+      return res.status(409).json({ error: "This bet panel is already used in this round." });
     }
-    res.json({ ok: true, roundId: round.roundId, bet, user: safeUser(user) });
-  } catch (error) { next(error); }
+
+    const bet = {
+      betId: crypto.randomUUID(),
+      panel,
+      userId: req.user.id,
+      stake,
+      status: "active",
+      autoCashoutAt,
+      placedAt: new Date().toISOString()
+    };
+
+    let updatedUser = null;
+    await session.withTransaction(async () => {
+      // Deduct points atomically only if the user still has enough balance.
+      const debit = await stateCollection.updateOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id, points: { $gte: stake } } } },
+        { $inc: { "users.$.points": -stake } },
+        { session }
+      );
+      if (!debit.modifiedCount) {
+        const error = new Error("Not enough demo points");
+        error.status = 400;
+        throw error;
+      }
+
+      // Add the bet only while this exact round is still open and this panel is unused.
+      const placed = await aviatorGlobalCollection.updateOne(
+        {
+          _id: "current",
+          roundId: round.roundId,
+          phase: "betting",
+          bettingEndsAt: { $gt: new Date().toISOString() },
+          bets: { $not: { $elemMatch: { userId: req.user.id, panel } } }
+        },
+        { $push: { bets: bet } },
+        { session }
+      );
+      if (!placed.modifiedCount) {
+        const error = new Error("Betting just closed or this panel was already used.");
+        error.status = 409;
+        throw error;
+      }
+
+      const state = await stateCollection.findOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { session, projection: { users: 1 } }
+      );
+      updatedUser = state?.users?.find(u => u.id === req.user.id) || null;
+    });
+
+    if (!updatedUser) throw new Error("Bet placed but user balance could not be read.");
+    res.json({ ok: true, roundId: round.roundId, bet, user: safeUser(updatedUser) });
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
 });
 app.post("/api/aviator/cashout", auth, async (req, res, next) => {
   try {
