@@ -349,3 +349,9 @@
 @keyframes rfPlaneCrash{0%{opacity:1}35%{transform:translate(12px,10px) rotate(18deg) scale(1.05)}100%{opacity:0;transform:translate(70px,95px) rotate(75deg) scale(.35)}}
 @media(max-width:900px){.aviatorMode .aviatorSky{height:210px!important;min-height:210px!important}}
 @media(max-width:600px){.aviatorMode .aviatorSky{height:190px!important;min-height:190px!important}.aviatorMode .aviatorMultiplier{font-size:48px!important}}
+
+/* Phase 4 visual correction: expose the curve and soften the area fill */
+.aviatorMode .rfFlightArea{opacity:.42!important}
+.aviatorMode .rfFlightArea+path{stroke-width:3.5}
+.aviatorMode .flightLine{stroke-dasharray:1400;stroke-dashoffset:0;filter:drop-shadow(0 0 7px #ff174b)!important}
+.aviatorMode .aviatorPlane{left:8%;top:76%;transform:translate(-50%,-50%) rotate(-12deg);will-change:left,top,transform}
