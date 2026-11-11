@@ -1310,7 +1310,7 @@ app.get("/api/sportmonks/test", async (req, res, next) => {
   }
 });
 
-// SPORTMONKS — upcoming football fixtures test (next 7 days by default)
+// SPORTMONKS — upcoming football fixtures test (next 30 days by default)
 let sportmonksUpcomingCache = { key: "", expiresAt: 0, data: null };
 app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
   try {
@@ -1322,7 +1322,7 @@ app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
     const startDate = String(req.query.start || new Date().toISOString().slice(0, 10));
     const endDate = String(req.query.end || (() => {
       const date = new Date(startDate + "T00:00:00Z");
-      date.setUTCDate(date.getUTCDate() + 7);
+      date.setUTCDate(date.getUTCDate() + 30);
       return date.toISOString().slice(0, 10);
     })());
     const validDate = value => {
@@ -1334,8 +1334,8 @@ app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
       return res.status(400).json({ ok: false, error: "Use valid start/end dates in YYYY-MM-DD format; end must not be before start." });
     }
     const spanDays = (new Date(endDate + "T00:00:00Z") - new Date(startDate + "T00:00:00Z")) / 86400000;
-    if (spanDays > 14) {
-      return res.status(400).json({ ok: false, error: "Date range cannot exceed 14 days." });
+    if (spanDays > 30) {
+      return res.status(400).json({ ok: false, error: "Date range cannot exceed 30 days." });
     }
 
     const cacheKey = startDate + ":" + endDate;
