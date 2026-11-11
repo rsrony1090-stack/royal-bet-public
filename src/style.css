@@ -385,3 +385,9 @@
 .aviatorMode .aviatorSky.new-round{animation:rfNewRoundPulse .85s ease-out both!important}
 .aviatorMode .aviatorSky.new-round .aviatorBadge{animation:rfNewRoundBadge .45s ease-out both}
 @media(prefers-reduced-motion:reduce){.aviatorMode .aviatorSky.new-round,.aviatorMode .aviatorSky.new-round .aviatorBadge{animation:none!important}}
+
+
+/* Betting mode tabs */
+.aviatorMode .rfBetModeTabs{display:flex;gap:5px;padding:7px 9px 0;background:#151719;border-bottom:1px solid #292b2e}
+.aviatorMode .rfBetModeTabs button{min-width:72px;height:29px;padding:0 16px;border-radius:7px 7px 0 0;background:#222529;color:#929aa3;font-size:10px;font-weight:900;letter-spacing:.8px}
+.aviatorMode .rfBetModeTabs button.active{background:#26352e;color:#48df91;box-shadow:inset 0 -2px #35d782}
