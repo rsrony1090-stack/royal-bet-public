@@ -240,3 +240,31 @@
  .rfBetsSidebar{height:230px}
  .rfBetRow{font-size:9px;min-height:31px}
 }
+
+
+/* Reduce Aviator flight screen height */
+.aviatorMode .aviatorSky{
+  height:190px!important;
+  min-height:190px!important;
+}
+.aviatorMode .aviatorMultiplier{
+  font-size:clamp(42px,4.8vw,64px)!important;
+}
+.aviatorMode .aviatorPlane{
+  font-size:46px!important;
+}
+@media(max-width:900px){
+  .aviatorMode .aviatorSky{
+    height:175px!important;
+    min-height:175px!important;
+  }
+}
+@media(max-width:600px){
+  .aviatorMode .aviatorSky{
+    height:165px!important;
+    min-height:165px!important;
+  }
+  .aviatorMode .aviatorMultiplier{
+    font-size:48px!important;
+  }
+}
