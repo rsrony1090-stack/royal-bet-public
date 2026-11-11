@@ -145,3 +145,9 @@
  .aviatorMainAction{min-height:50px!important;font-size:13px!important}
  .aviatorPanelFoot{margin-top:6px!important}
 }
+
+.rfAutoToggle{display:flex;align-items:center;gap:7px}
+.rfAutoToggle button{min-width:43px;padding:7px 10px;border:1px solid #4a515a;border-radius:18px;background:#292d33;color:#b5bbc2;font-size:10px;font-weight:900;cursor:pointer}
+.rfAutoToggle button.rfAutoOn{background:#174b36;border-color:#2ca96f;color:#62e5a2}
+.rfAutoToggle button.rfAutoOff{background:#34363b;border-color:#4a4d53;color:#e0e2e5}
+.rfAutoToggle input:disabled{opacity:.45}
