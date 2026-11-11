@@ -268,3 +268,23 @@
     font-size:48px!important;
   }
 }
+
+/* Phase 1: Aviator reference header and full-width game frame */
+.aviatorMode{background:#08090b!important;min-height:100vh;color:#f4f4f4}
+.aviatorMode>.top,.aviatorMode>.notice{display:none!important}
+.aviatorMode>.layout{display:block!important;max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
+.aviatorMode .sidebar,.aviatorMode .slip{display:none!important}
+.aviatorMode .content{width:100%!important;min-width:0!important;padding:0 5px 18px!important;margin:0!important}
+.aviatorMode .rfTopbar{height:48px;min-height:48px;width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#101113;border-bottom:1px solid #292b2e;gap:12px}
+.aviatorMode .rfBrand{display:flex;align-items:center;gap:8px;font:800 17px Oswald,sans-serif;letter-spacing:.5px;color:#f4f4f4}
+.aviatorMode .rfBrand i{font-style:normal;color:#ed174c}
+.aviatorMode .rfLogo{width:27px;height:27px;display:grid;place-items:center;border-radius:7px;background:#ed174c;color:white;font:900 17px Oswald}
+.aviatorMode .rfTopActions{display:flex;align-items:center;gap:10px}
+.aviatorMode .rfBalance{display:flex;flex-direction:column;align-items:flex-end;gap:1px;color:#46d783;font-weight:800;line-height:1.1}
+.aviatorMode .rfBalance small{font-size:8px;letter-spacing:1px;color:#9da3a9}
+.aviatorMode .rfBalance span{font-size:15px}
+.aviatorMode .rfBalance em{font-size:9px;font-style:normal;color:#9da3a9}
+.aviatorMode .rfHeaderIcon{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#282a2d;color:#e5e7e9;font-size:15px;font-weight:800}
+.aviatorMode .rfHeaderIcon.rfClose{background:#ed174c;color:#fff;font-size:22px;line-height:1}
+.aviatorMode .aviatorTitle{display:none!important}
+@media(max-width:600px){.aviatorMode .rfTopbar{height:43px;min-height:43px;padding:0 8px}.aviatorMode .rfBrand{font-size:14px}.aviatorMode .rfLogo{width:24px;height:24px}.aviatorMode .rfBalance span{font-size:13px}.aviatorMode .rfTopActions{gap:7px}}
