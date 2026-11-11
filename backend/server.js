@@ -329,10 +329,86 @@ app.get("/api/sports", async (req, res, next) => {
   }
 });
 
+// SPORTMONKS UPCOMING FIXTURE SYNC — cached for 60 seconds
+let sportmonksMatchSync = { expiresAt: 0, matches: [] };
+async function syncSportmonksUpcomingMatches(db) {
+  if (sportmonksMatchSync.expiresAt > Date.now()) {
+    return sportmonksMatchSync.matches;
+  }
+
+  const apiToken = process.env.SPORTMONKS_API_TOKEN;
+  if (!apiToken) return [];
+
+  try {
+    const startDate = new Date().toISOString().slice(0, 10);
+    const end = new Date();
+    end.setUTCDate(end.getUTCDate() + 30);
+    const endDate = end.toISOString().slice(0, 10);
+    const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`;
+    const response = await fetch(endpoint, {
+      headers: { Authorization: apiToken, Accept: "application/json" },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) {
+      console.error("Sportmonks fixture sync HTTP", response.status);
+      return sportmonksMatchSync.matches;
+    }
+
+    const payload = await response.json();
+    const fixtures = Array.isArray(payload.data) ? payload.data : [];
+    const imported = fixtures
+      .filter(f => f.starting_at && (!f.state?.name || /not started|scheduled/i.test(f.state.name)))
+      .map(f => {
+        const home = (f.participants || []).find(p => p.meta?.location === "home");
+        const away = (f.participants || []).find(p => p.meta?.location === "away");
+        if (!home || !away) return null;
+        const start = String(f.starting_at).replace(" ", "T") + "Z";
+        return {
+          id: "sm_" + f.id,
+          provider: "Sportmonks",
+          providerId: f.id,
+          sport: "Football",
+          country: f.league?.country?.name || "International",
+          league: f.league?.name || "Football",
+          home: home.name,
+          away: away.name,
+          start,
+          status: "upcoming",
+          score: "—",
+          markets: [
+            { name: "Match Winner", options: [
+              { label: home.name, odd: 1.85 },
+              { label: "Draw", odd: 3.40 },
+              { label: away.name, odd: 4.10 }
+            ]},
+            { name: "Total Goals", options: [
+              { label: "Over 2.5", odd: 1.90 },
+              { label: "Under 2.5", odd: 1.90 }
+            ]}
+          ]
+        };
+      })
+      .filter(Boolean);
+
+    const existingIds = new Set(db.matches.map(m => m.id));
+    const newMatches = imported.filter(m => !existingIds.has(m.id));
+    if (newMatches.length) {
+      db.matches.push(...newMatches);
+      await writeDB(db);
+    }
+    sportmonksMatchSync = { expiresAt: Date.now() + 60000, matches: imported };
+    return imported;
+  } catch (error) {
+    console.error("Sportmonks fixture sync failed:", error.message);
+    return sportmonksMatchSync.matches;
+  }
+}
+
 // MATCHES
 app.get("/api/matches", async (req, res, next) => {
   try {
     const db = await readDB();
+    await syncSportmonksUpcomingMatches(db);
 
     let rows = db.matches;
 
@@ -346,13 +422,13 @@ app.get("/api/matches", async (req, res, next) => {
 
     if (req.query.q) {
       const q = String(req.query.q).toLowerCase();
-
       rows = rows.filter(m =>
         [m.home, m.away, m.league, m.country]
           .some(x => String(x).toLowerCase().includes(q))
       );
     }
 
+    rows.sort((a, b) => new Date(a.start) - new Date(b.start));
     res.json(rows);
   } catch (error) {
     next(error);
