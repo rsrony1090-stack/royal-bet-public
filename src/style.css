@@ -151,3 +151,92 @@
 .rfAutoToggle button.rfAutoOn{background:#174b36;border-color:#2ca96f;color:#62e5a2}
 .rfAutoToggle button.rfAutoOff{background:#34363b;border-color:#4a4d53;color:#e0e2e5}
 .rfAutoToggle input:disabled{opacity:.45}
+
+
+/* Reference-matched Aviator desktop game layout */
+.aviatorMode{background:#08090b!important;min-height:100vh}
+.aviatorMode>.top,.aviatorMode>.notice{display:none!important}
+.aviatorMode>.layout{display:block!important;max-width:none!important;padding:0!important;margin:0!important}
+.aviatorMode .sidebar,.aviatorMode .slip{display:none!important}
+.aviatorMode .content{width:100%;min-width:0;padding:0 4px 18px}
+.aviatorMode .rfTopbar{height:27px;min-height:27px;padding:0 10px;margin:0;background:#08090b;border:0;border-radius:0;gap:12px}
+.aviatorMode .rfBrand{font-size:16px;line-height:1}
+.aviatorMode .rfBrand small,.aviatorMode .rfRoundTag{display:none}
+.aviatorMode .rfBalance{font-size:10px}
+.aviatorMode .rfBalance span{font-size:13px}
+.aviatorMode .rfRecentStrip{height:34px;padding:3px 8px 7px;gap:12px}
+.aviatorMode .rfRecentStrip>span{display:none}
+.aviatorMode .rfRecentStrip b{background:transparent;padding:0;font-size:12px}
+.rfGameLayout{display:grid;grid-template-columns:370px minmax(0,1fr);gap:5px;align-items:stretch}
+.rfBetsSidebar{height:466px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#17191b;border:1px solid #242629;border-radius:17px;padding:8px}
+.rfBetTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:2px;background:#0e0f11;border-radius:24px}
+.rfBetTabs button{height:27px;border-radius:20px;background:transparent;color:#9ba0a8;font-size:11px}
+.rfBetTabs button.active{background:#303236;color:#f5f5f5}
+.rfBetSummary{padding:10px 8px 7px;position:relative;border-bottom:1px solid #292b2e}
+.rfBetSummary>b{float:right;font-size:17px;color:#f2f2f2}
+.rfBetSummary>small{display:block;color:#a7adb4;font-size:10px;margin-top:2px}
+.rfAvatars{display:inline-block;color:#d4c0aa;font-size:17px;letter-spacing:-5px}
+.rfProgress{height:5px;background:#292c2e;border-radius:8px;margin-top:8px;overflow:hidden}
+.rfProgress i{display:block;height:100%;background:#38ad00}
+.rfBetTableHead,.rfBetRow{display:grid;grid-template-columns:minmax(0,1.2fr) .9fr .55fr .8fr;gap:5px;align-items:center}
+.rfBetTableHead{padding:10px 7px 7px;color:#7d8790;font-size:9px}
+.rfBetRows{overflow:auto;min-height:0;flex:1;scrollbar-width:thin;scrollbar-color:#41454a transparent}
+.rfBetRow{min-height:35px;margin:0 0 4px;padding:5px 7px;border-radius:20px;background:#101214;color:#d4d8dc;font-size:10px}
+.rfBetRow:nth-child(odd){background:#1b3010}
+.rfBetRow span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rfBetRow span:not(:first-child),.rfBetRow b{text-align:right}
+.rfHighText{color:#a36aff}.rfLowText{color:#21aaf2}
+.rfEmpty{padding:35px 8px;text-align:center;color:#858b92;font-size:11px}
+.rfPreviousRow{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #292b2e;color:#b8bec5;font-size:11px}
+.rfFairMini{padding:8px 5px 1px;border-top:1px solid #2a2c2f;color:#aab2bc;font-size:10px}
+.rfGameMain{min-width:0;display:flex;flex-direction:column;gap:5px}
+.aviatorMode .aviatorShell{padding:0!important;margin:0!important;border:0!important;border-radius:16px!important;background:#101113!important}
+.aviatorMode .aviatorGame{padding:0!important;margin:0!important}
+.aviatorMode .aviatorSky{height:246px!important;min-height:246px!important;border-radius:16px!important;background:repeating-conic-gradient(from 235deg at 0% 100%,#17191d 0deg 12deg,#090a0c 12deg 24deg)!important}
+.aviatorMode .aviatorGrid{background:radial-gradient(ellipse at 55% 55%,#59107a88,transparent 55%)!important}
+.aviatorMode .aviatorMultiplier{font-size:clamp(54px,6vw,82px)!important;letter-spacing:-2px!important;text-shadow:0 0 18px #9a35ff66!important}
+.aviatorMode .aviatorPlane{font-size:58px!important;color:#f20a4b!important;filter:drop-shadow(0 0 7px #f20a4b)!important}
+.aviatorMode .aviatorHint{display:none}
+.aviatorMode .aviatorSkyFooter{bottom:8px;font-size:8px}
+.rfPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0}
+.rfPanel{min-width:0;min-height:178px;padding:8px!important;background:#191b1d!important;border:1px solid #25272a!important;border-radius:17px!important;display:flex;flex-direction:column;justify-content:flex-start}
+.rfPanelTabs{display:flex;align-self:center;width:62%;height:29px;margin:0 0 8px;padding:3px;background:#101113;border-radius:20px;gap:3px}
+.rfPanelTabs button{flex:1;background:transparent;color:#aeb3ba;border-radius:18px;font-size:11px}
+.rfPanelTabs button.selected{background:#303236;color:#f6f6f6}
+.rfPanelControls{display:grid;grid-template-columns:minmax(110px,.75fr) minmax(130px,1fr);gap:8px;align-items:stretch;flex:1}
+.rfStakeColumn{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.rfPanel .aviatorStakeInput{display:grid;grid-template-columns:27px minmax(0,1fr) 27px;gap:4px;margin:3px 0 7px}
+.rfPanel .aviatorStakeInput button{height:29px;padding:0!important;border:0!important;background:#292c30!important;color:#b9c0c8!important;font-size:16px!important}
+.rfPanel .aviatorStakeInput input{height:29px!important;min-width:0;padding:0!important;border:0!important;background:transparent!important;font-size:15px!important}
+.rfPanel .aviatorQuickAmounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0}
+.rfPanel .aviatorQuickAmounts button{height:23px;padding:2px!important;border:0!important;background:#111315!important;color:#aeb5bd!important;font-size:10px!important}
+.rfPanel .aviatorMainAction{height:82px;min-height:82px!important;align-self:center;border:1px solid #b7e5a9;border-radius:12px!important;font-size:21px!important;font-weight:500;letter-spacing:0}
+.rfPanel .aviatorMainAction small{font-size:15px;font-weight:400}
+.rfPanel .aviatorBet{background:#20b20c!important;color:#fff!important;box-shadow:none!important}
+.rfPanel .aviatorCash{background:#e78300!important;color:#fff!important;box-shadow:none!important}
+.rfAutoLine{display:none;align-items:center;gap:5px;margin-top:5px;color:#9ca5ae;font-size:9px}
+.rfAutoLine input[type=number]{width:42px;background:#101214;border:1px solid #34383d;border-radius:5px;color:#fff;padding:3px;font-size:9px}
+.rfAutoLine input[type=checkbox]{accent-color:#25b913}
+.rfPanel:has(.rfAutoLine input[type=checkbox]:checked) .rfAutoLine{display:flex}
+.aviatorMode .aviatorControlBar{margin:5px 0 0;padding:8px;background:#17191b;border-color:#292b2e}
+.aviatorMode .aviatorFairnessCard,.aviatorMode .aviatorHistoryHead,.aviatorMode .history{margin-left:8px;margin-right:8px}
+@media(max-width:900px){
+ .rfGameLayout{grid-template-columns:1fr}
+ .rfBetsSidebar{height:250px;order:2}
+ .rfGameMain{order:1}
+ .aviatorMode .aviatorSky{height:clamp(230px,42vw,360px)!important;min-height:230px!important}
+}
+@media(max-width:600px){
+ .aviatorMode .content{padding:0 3px 14px}
+ .rfGameLayout{gap:5px}
+ .aviatorMode .aviatorSky{height:240px!important;min-height:240px!important}
+ .rfPanels{grid-template-columns:1fr 1fr;gap:4px}
+ .rfPanel{padding:6px!important;min-height:160px}
+ .rfPanelTabs{width:90%;height:25px;margin-bottom:5px}
+ .rfPanelControls{grid-template-columns:minmax(0,1fr);gap:4px}
+ .rfPanel .aviatorMainAction{height:48px;min-height:48px!important;font-size:15px!important}
+ .rfPanel .aviatorMainAction small{font-size:11px}
+ .rfPanel .aviatorQuickAmounts button{height:21px}
+ .rfBetsSidebar{height:230px}
+ .rfBetRow{font-size:9px;min-height:31px}
+}
