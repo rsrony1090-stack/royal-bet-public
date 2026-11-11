@@ -372,3 +372,8 @@
 .aviatorMode .aviatorSky.crashed .aviatorBadge{color:#ff6685}
 .aviatorMode .aviatorSky.crashed .aviatorLiveDot{background:#ff315f;box-shadow:0 0 9px #ff315f}
 @media(max-width:600px){.aviatorMode .rfCrashOverlay{min-width:125px;padding:8px 16px}}
+
+/* Phase 4: custom aircraft graphic */
+.aviatorMode .rfAircraftSvg{display:block;width:54px;height:54px;overflow:visible;color:#ff174b;filter:drop-shadow(0 0 5px #ff174b) drop-shadow(0 0 13px #ff174b88)}
+.aviatorMode .aviatorPlane{font-size:0!important;line-height:0}
+@media(max-width:600px){.aviatorMode .rfAircraftSvg{width:43px;height:43px}}
