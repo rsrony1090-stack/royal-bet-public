@@ -354,27 +354,38 @@ async function syncCricApiMatches(db) {
       if (id) byId.set(String(id), match);
     });
 
+    const now = Date.now();
+    const today = new Date(now).toISOString().slice(0, 10);
     const imported = [...byId.values()].map(match => {
       const name = String(match.name || match.title || "");
       const teams = Array.isArray(match.teams) ? match.teams : [];
-      const home = teams[0] || name.split(/\s+vs\s+/i)[0] || "Team A";
-      const away = teams[1] || name.split(/\s+vs\s+/i)[1] || "Team B";
-      const providerStatus = String(match.status || "");
-      const isUpcoming = /not started|upcoming|scheduled|fixture/i.test(providerStatus);
-      const isFinished = /won by|drawn|match tied|abandoned|no result|completed|finished/i.test(providerStatus);
-      const status = isUpcoming ? "upcoming" : isFinished ? "finished" : "live";
-      const rawDate = match.dateTimeGMT || match.date || new Date().toISOString();
+      const splitTeams = name.split(/\s+vs\s+/i);
+      const home = String(teams[0] || splitTeams[0] || "").trim();
+      const away = String(teams[1] || splitTeams[1] || "").trim();
+      const providerStatus = String(match.status || "").trim();
+      const rawDate = match.dateTimeGMT || match.date || "";
       const start = /^\d{4}-\d{2}-\d{2}$/.test(String(rawDate))
         ? String(rawDate) + "T12:00:00.000Z"
         : String(rawDate);
+      const startMs = Date.parse(start);
+      const startDate = String(start).slice(0, 10);
+      const hasValidTeams = home && away &&
+        !/^(tbc|tbd|team\s*[ab]|unknown|)$/i.test(home) &&
+        !/^(tbc|tbd|team\s*[ab]|unknown|)$/i.test(away) &&
+        home.toLowerCase() !== away.toLowerCase();
+      if (!hasValidTeams || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return null;
+
+      const isFinished = /won by|drawn|match tied|abandoned|no result|completed|finished/i.test(providerStatus);
+      const isUpcoming = !isFinished && (
+        /not started|upcoming|scheduled|fixture|match starts at/i.test(providerStatus) ||
+        (startDate > today) ||
+        (Number.isFinite(startMs) && startMs > now + 2 * 60 * 60 * 1000)
+      );
+      const status = isFinished ? "finished" : isUpcoming ? "upcoming" : "live";
       const scores = Array.isArray(match.score) ? match.score : [];
       const scoreText = scores.length
         ? scores.map(item => `${item.inning ? item.inning + ": " : ""}${item.r ?? 0}/${item.w ?? 0} (${item.o ?? 0})`).join(" · ")
         : (status === "upcoming" ? "—" : providerStatus || "Live");
-      const options = [
-        { label: home, odd: 1.90 },
-        { label: away, odd: 1.90 }
-      ];
       return {
         id: "cric_" + (match.id || match.unique_id),
         provider: "CricAPI",
@@ -385,12 +396,20 @@ async function syncCricApiMatches(db) {
         home, away, start, status, score: scoreText,
         providerStatus,
         venue: match.venue || "",
-        markets: [{ name: "Match Winner", options }]
+        markets: [{ name: "Match Winner", options: [
+          { label: home, odd: 1.90 },
+          { label: away, odd: 1.90 }
+        ]}]
       };
-    }).filter(match => match.home && match.away && match.id !== "cric_undefined");
+    }).filter(Boolean);
 
+    const validIds = new Set(imported.map(match => match.id));
+    const beforeCount = db.matches.length;
+    db.matches = db.matches.filter(match =>
+      match.provider !== "CricAPI" || validIds.has(match.id)
+    );
+    let changed = db.matches.length !== beforeCount;
     const existing = new Map(db.matches.map(match => [match.id, match]));
-    let changed = false;
     for (const match of imported) {
       const old = existing.get(match.id);
       if (!old) {
