@@ -396,3 +396,103 @@
 .aviatorMode .rfBetModeTabs button{min-width:64px}
 .aviatorMode .rfPanelAutoToggle{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#1c2923;color:#55df98;font-size:10px;font-weight:800;letter-spacing:.25px;border-bottom:1px solid #294b39;cursor:pointer}
 .aviatorMode .rfPanelAutoToggle input{accent-color:#35d782;width:14px;height:14px}
+
+
+/* ROYAL BET — unified premium sportsbook redesign */
+:root{color-scheme:dark;--rb-bg:#080e18;--rb-panel:#111c2b;--rb-panel2:#162437;--rb-line:#26364a;--rb-muted:#91a2b8;--rb-text:#edf4fb;--rb-green:#19c783;--rb-gold:#f0c66a}
+body{background:radial-gradient(ellipse at 50% -15%,#172b40 0,#0a1320 48%,#080e18 100%);color:var(--rb-text)}
+.app:not(.aviatorMode){background:transparent;min-height:100vh}
+.top{height:68px;padding:0 clamp(14px,2.5vw,36px);background:#0b1421ed;border-bottom:1px solid #24364a;box-shadow:0 8px 28px #0003;backdrop-filter:blur(16px)}
+.brand{font-size:22px;letter-spacing:1.4px}.crest{background:linear-gradient(145deg,#21d994,#087d58);color:#04150f;border-radius:10px;box-shadow:0 5px 18px #13c78333}
+.brand b{color:#23d493}.brand small{color:#8095ac}
+.demoTag{color:#65e6b1;border-color:#23694f;background:#102b25}
+.outline,.userbtn{border:1px solid #30465e;background:#142337;color:#dce8f4;border-radius:8px}
+.gold{background:linear-gradient(120deg,#24d996,#0fa66f);color:#04180f;border-radius:8px;box-shadow:0 5px 16px #11bf7b22}
+.notice{background:#0d2c25;color:#75e6b8;border-top:1px solid #174b3a;border-bottom:1px solid #174b3a;padding:8px 12px;font-size:10px;letter-spacing:.25px}
+.layout{max-width:1760px;grid-template-columns:218px minmax(0,1fr) 310px;gap:15px;padding:17px clamp(10px,1.6vw,24px)}
+.sidebar,.slip{background:linear-gradient(180deg,#111e2e,#0e1927);border:1px solid #26384d;border-radius:13px;box-shadow:0 12px 32px #0002}
+.sidebar{padding:13px 10px;top:91px;max-height:calc(100vh - 105px)}
+.sideTitle{color:#71869e;font-size:9px;letter-spacing:1.8px}
+.sideItem,.sportItem{color:#aebed0;border-radius:8px;transition:background .18s,color .18s,transform .18s}
+.sideItem{font-size:12px;padding:11px 10px}
+.sideItem.active,.sideItem:hover,.sportItem:hover,.sportItem.chosen{background:linear-gradient(90deg,#123e35,#173044);color:#63e6b1;box-shadow:inset 3px 0 #1bd18a}
+.sportItem{font-size:11px;padding:8px 10px}
+.content{min-width:0}
+.hero{min-height:168px;padding:24px 28px;border:1px solid #2b455d;border-radius:15px;background:radial-gradient(ellipse at 84% 50%,#1c6654 0,#16394a 25%,transparent 58%),linear-gradient(115deg,#14273b,#101c2c 70%);box-shadow:0 14px 34px #0002}
+.eyebrow{color:#5be2ae;font-weight:800;font-size:9px;letter-spacing:2.1px}
+.hero h1{font-size:34px;letter-spacing:.2px}.hero h1 em{color:#55e3ac}
+.hero p{color:#a7b8ca;font-size:11px}
+.heroBall{font-size:86px;opacity:.65;filter:drop-shadow(0 8px 20px #16cb8a44)}
+.filterbar{align-items:center;margin:15px 0 11px}
+.tabs{background:#111e2d;border:1px solid #26384d;border-radius:9px;padding:3px}
+.tabs button{padding:9px 14px;color:#91a3b8;font-size:10px}
+.tabs button.on{background:#1c3c3b;color:#63e7b2;box-shadow:inset 0 0 0 1px #28634f}
+.search{background:#101d2b;border:1px solid #2b3e53;border-radius:9px}
+.search:focus-within{border-color:#239d76;box-shadow:0 0 0 3px #19c78318}
+.search input{color:#eef7ff}
+.sportchips{gap:6px;padding-bottom:12px}
+.chip{background:#111e2d;border:1px solid #26384d;color:#9fb0c4;border-radius:8px;padding:8px 11px;font-size:10px}
+.chip:hover,.activeChip{background:#123d34;color:#62e4b1;border-color:#267958}
+.league{background:#101b29;border:1px solid #26394d;border-radius:12px;margin-bottom:12px;box-shadow:0 8px 24px #0002}
+.leagueHead{padding:12px 15px;background:linear-gradient(90deg,#182b3d,#142333);color:#dce9f5;border-bottom:1px solid #2a3e52}
+.leagueHead span{font-size:11px}.leagueHead svg{color:#5eddb0}.leagueHead small{color:#7f95aa;font-size:8px;letter-spacing:1px}
+.match{padding:14px 15px;border-top:1px solid #223449;grid-template-columns:minmax(145px,.9fr) minmax(230px,1.4fr);gap:15px;transition:background .16s}
+.match:hover{background:#142437}
+.matchMeta{color:#8da1b7;font-size:9px;margin-bottom:10px}
+.liveLabel{color:#ff6b79;background:#401e2b;border-radius:4px;padding:3px 6px}
+.teams{gap:6px;font-size:12px;color:#eaf2fa}
+.versus{color:#71869d;font-size:9px}
+.market small{color:#8fa2b8;font-size:9px;font-weight:700;letter-spacing:.25px}
+.market>div{gap:5px}
+.odd{background:#1a2b3e;border:1px solid #30465d;border-radius:7px;min-width:72px;padding:8px 9px;color:#c4d2e0;font-size:9px;transition:.15s}
+.odd b{color:#66e3b3;font-size:10px}
+.odd:hover,.selectedOdd{background:#174638;border-color:#24c889;color:#fff;box-shadow:0 0 0 1px #24c88922}
+.empty{background:#101b29;border:1px dashed #344b62;border-radius:12px;color:#91a4b9}
+.slip{padding:15px;top:91px}
+.slipHead{border-bottom:1px solid #293c51;color:#e9f2fa;padding-bottom:13px}
+.slipHead span svg{color:#5ce1b0}
+.slipEmpty{color:#8094aa}.slipEmpty b{color:#dce8f3}
+.slipItem{border-bottom:1px solid #26384b}
+.slipItem strong,.goldText{color:#61e2b1!important}
+.slipCalc>div{color:#9aadc0}.slipCalc>div b{color:#eaf3fb}
+.slipCalc input,.modal input{background:#0d1927;border:1px solid #30465b;border-radius:8px}
+.place{background:linear-gradient(110deg,#22d894,#0d9f6a);color:#04170f;border-radius:8px;font-weight:900}
+.fine{color:#8296aa}
+.history,.accountCard{background:#111e2d;border:1px solid #293c51;border-radius:12px}
+.status.won{color:#5ce2ae}.status.pending{color:#f1c86b}
+.accountCard{box-shadow:0 12px 30px #0002}.avatar{background:linear-gradient(140deg,#28d99a,#087b58);color:#04170f}
+.balance{color:#5ee1b0}
+.stats div{background:#17273a;border:1px solid #2a3f55;border-radius:10px}
+.stats b{color:#edf6ff}
+.modal{background:#111e2d;border:1px solid #344a60;border-radius:14px;box-shadow:0 24px 80px #0009}
+.modalShade{backdrop-filter:blur(6px)}
+.toast{background:#1ac783;color:#04170f;border-radius:9px}
+footer{border-color:#26394d;color:#7f93a9}
+@media(max-width:1100px){
+ .layout{grid-template-columns:190px minmax(0,1fr);gap:12px}
+ .slip{grid-column:2;position:static}
+}
+@media(max-width:720px){
+ .top{height:58px;padding:0 10px;gap:9px}
+ .brand{font-size:16px;gap:7px}.brand small{font-size:7px}.crest{font-size:19px;padding:4px 8px}
+ .layout{padding:9px;gap:9px}
+ .sidebar{border-radius:10px;background:#101d2b;scrollbar-width:none}
+ .sideItem{padding:8px 10px}
+ .hero{min-height:145px;padding:18px;border-radius:12px}
+ .hero h1{font-size:27px}.hero p{max-width:240px;line-height:1.5}
+ .heroBall{font-size:60px}
+ .filterbar{gap:8px}.tabs{width:100%;justify-content:space-between}.tabs button{flex:1;padding:9px 5px}
+ .search{min-height:38px}.search input{font-size:11px}
+ .sportchips{margin-right:-2px}
+ .league{border-radius:10px}
+ .match{padding:12px;gap:11px}
+ .teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px}
+ .teams b:last-child{text-align:right}
+ .versus{white-space:nowrap}
+ .marketGrid{grid-template-columns:1fr;gap:9px}
+ .odd{min-height:34px}
+ .slip{border-radius:11px}
+}
+@media(prefers-reduced-motion:no-preference){
+ .sideItem,.sportItem,.match,.odd{transition:background .16s ease,border-color .16s ease,color .16s ease}
+}
