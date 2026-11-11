@@ -1310,6 +1310,82 @@ app.get("/api/sportmonks/test", async (req, res, next) => {
   }
 });
 
+// SPORTMONKS — upcoming football fixtures test (next 7 days by default)
+let sportmonksUpcomingCache = { key: "", expiresAt: 0, data: null };
+app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    const startDate = String(req.query.start || new Date().toISOString().slice(0, 10));
+    const endDate = String(req.query.end || (() => {
+      const date = new Date(startDate + "T00:00:00Z");
+      date.setUTCDate(date.getUTCDate() + 7);
+      return date.toISOString().slice(0, 10);
+    })());
+    const validDate = value => {
+      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+      const date = new Date(value + "T00:00:00Z");
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    };
+    if (!validDate(startDate) || !validDate(endDate) || endDate < startDate) {
+      return res.status(400).json({ ok: false, error: "Use valid start/end dates in YYYY-MM-DD format; end must not be before start." });
+    }
+    const spanDays = (new Date(endDate + "T00:00:00Z") - new Date(startDate + "T00:00:00Z")) / 86400000;
+    if (spanDays > 14) {
+      return res.status(400).json({ ok: false, error: "Date range cannot exceed 14 days." });
+    }
+
+    const cacheKey = startDate + ":" + endDate;
+    if (sportmonksUpcomingCache.key === cacheKey && sportmonksUpcomingCache.data && sportmonksUpcomingCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksUpcomingCache.data, cached: true });
+    }
+
+    const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`;
+    const response = await fetch(endpoint, {
+      headers: { Authorization: apiToken, Accept: "application/json" },
+      signal: AbortSignal.timeout(20000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Sportmonks upcoming fixtures returned HTTP", response.status);
+      return res.status(response.status === 429 ? 429 : 502).json({
+        ok: false,
+        error: payload?.message || payload?.errors?.[0]?.detail || `Sportmonks API returned HTTP ${response.status}`
+      });
+    }
+
+    const fixtures = Array.isArray(payload.data) ? payload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks",
+      endpoint: "football/fixtures/between",
+      dateRange: { start: startDate, end: endDate },
+      upcomingMatches: fixtures.length,
+      sample: fixtures.slice(0, 10).map(fixture => ({
+        id: fixture.id,
+        name: fixture.name,
+        startingAt: fixture.starting_at,
+        state: fixture.state?.name || fixture.state_id || null,
+        league: fixture.league?.name || null,
+        participants: (fixture.participants || []).map(team => ({
+          name: team.name,
+          location: team.meta?.location || null
+        }))
+      })),
+      pagination: payload.pagination || null,
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    sportmonksUpcomingCache = { key: cacheKey, data: result, expiresAt: Date.now() + 60000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ERROR HANDLER
 app.use((error, req, res, next) => {
   console.error("API Error:", error);
