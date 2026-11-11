@@ -391,3 +391,8 @@
 .aviatorMode .rfBetModeTabs{display:flex;gap:5px;padding:7px 9px 0;background:#151719;border-bottom:1px solid #292b2e}
 .aviatorMode .rfBetModeTabs button{min-width:72px;height:29px;padding:0 16px;border-radius:7px 7px 0 0;background:#222529;color:#929aa3;font-size:10px;font-weight:900;letter-spacing:.8px}
 .aviatorMode .rfBetModeTabs button.active{background:#26352e;color:#48df91;box-shadow:inset 0 -2px #35d782}
+
+/* Per-panel AUTO mode tab */
+.aviatorMode .rfBetModeTabs button{min-width:64px}
+.aviatorMode .rfPanelAutoToggle{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#1c2923;color:#55df98;font-size:10px;font-weight:800;letter-spacing:.25px;border-bottom:1px solid #294b39;cursor:pointer}
+.aviatorMode .rfPanelAutoToggle input{accent-color:#35d782;width:14px;height:14px}
