@@ -496,3 +496,19 @@ footer{border-color:#26394d;color:#7f93a9}
 @media(prefers-reduced-motion:no-preference){
  .sideItem,.sportItem,.match,.odd{transition:background .16s ease,border-color .16s ease,color .16s ease}
 }
+
+/* Cricket match details panel */
+.matchDetailsToggle{display:inline-flex;align-items:center;gap:10px;margin-top:12px;padding:7px 10px;border:1px solid #36516a;border-radius:6px;background:#192b3b;color:#8fe0c0;font-size:10px;font-weight:700}
+.matchDetailsToggle span{font-size:14px;line-height:10px}
+.cricketDetails{grid-column:1/-1;padding:14px;background:linear-gradient(135deg,#142638,#172b3a);border:1px solid #31516a;border-radius:8px}
+.cricketDetailsHead{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#eaf2fa;font-size:10px;letter-spacing:1px;margin-bottom:12px}
+.cricketStatus{font-size:9px;padding:4px 7px;border-radius:20px;background:#28384a;color:#c5d2df}
+.cricketStatus.live{background:#47272b;color:#ff9a9a}.cricketStatus.finished{background:#173e34;color:#79e2b6}.cricketStatus.upcoming{background:#3c3522;color:#f0d27f}
+.cricketDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cricketDetailGrid>div{min-width:0;padding:9px;background:#0f1c29;border-radius:6px}
+.cricketDetailGrid small,.cricketDetailGrid b{display:block}
+.cricketDetailGrid small{font-size:8px;letter-spacing:1px;color:#8299ad;margin-bottom:6px}
+.cricketDetailGrid b{font-size:11px;line-height:1.5;color:#e1ebf3;overflow-wrap:anywhere}
+.cricketFullScore b+b{margin-top:4px;color:#9fe5c8}
+.cricketDetails p{font-size:9px;line-height:1.5;color:#8ba0b4;margin:11px 0 0}
+@media(max-width:720px){.cricketDetailGrid{grid-template-columns:1fr}.cricketDetails{padding:11px}}
