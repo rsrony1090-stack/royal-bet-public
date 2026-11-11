@@ -288,3 +288,16 @@
 .aviatorMode .rfHeaderIcon.rfClose{background:#ed174c;color:#fff;font-size:22px;line-height:1}
 .aviatorMode .aviatorTitle{display:none!important}
 @media(max-width:600px){.aviatorMode .rfTopbar{height:43px;min-height:43px;padding:0 8px}.aviatorMode .rfBrand{font-size:14px}.aviatorMode .rfLogo{width:24px;height:24px}.aviatorMode .rfBalance span{font-size:13px}.aviatorMode .rfTopActions{gap:7px}}
+
+
+/* Phase 2: Recent crash multiplier history */
+.aviatorMode .rfCrashHistory{display:flex;align-items:center;gap:10px;min-height:42px;padding:5px 10px;margin:5px 0 7px;background:#111315;border:1px solid #292b2e;border-radius:10px;overflow:hidden}
+.aviatorMode .rfCrashLabel{flex:0 0 auto;color:#9299a1;font-size:9px;font-weight:800;letter-spacing:1px}
+.aviatorMode .rfCrashItems{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.aviatorMode .rfCrashItems::-webkit-scrollbar{display:none}
+.aviatorMode .rfCrashChip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:57px;height:25px;padding:0 9px;border-radius:6px;background:#24272a;font-size:11px;font-weight:800;letter-spacing:.1px}
+.aviatorMode .rfCrashChip.low{color:#23c982;background:#123326}
+.aviatorMode .rfCrashChip.mid{color:#c4a2ff;background:#302044}
+.aviatorMode .rfCrashChip.high{color:#ffcf5b;background:#40331a}
+.aviatorMode .rfCrashEmpty{color:#7e858d;font-size:10px;white-space:nowrap}
+@media(max-width:600px){.aviatorMode .rfCrashHistory{min-height:37px;padding:4px 7px;gap:7px;margin:4px 0 5px}.aviatorMode .rfCrashChip{min-width:51px;height:23px;font-size:10px}}
