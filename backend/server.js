@@ -329,6 +329,90 @@ app.get("/api/sports", async (req, res, next) => {
   }
 });
 
+// CRICAPI CRICKET MATCH SYNC — refreshes every 60 seconds
+let cricApiMatchSync = { expiresAt: 0, matches: [] };
+async function syncCricApiMatches(db) {
+  if (cricApiMatchSync.expiresAt > Date.now()) return cricApiMatchSync.matches;
+  const apiKey = process.env.CRICAPI_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const base = "https://api.cricapi.com/v1";
+    const [currentResponse, listResponse] = await Promise.all([
+      fetch(`${base}/currentMatches?apikey=${encodeURIComponent(apiKey)}&offset=0`, { signal: AbortSignal.timeout(15000) }),
+      fetch(`${base}/matches?apikey=${encodeURIComponent(apiKey)}&offset=0`, { signal: AbortSignal.timeout(15000) })
+    ]);
+    const [currentPayload, listPayload] = await Promise.all([
+      currentResponse.json().catch(() => ({})),
+      listResponse.json().catch(() => ({}))
+    ]);
+    const current = currentResponse.ok && Array.isArray(currentPayload.data) ? currentPayload.data : [];
+    const listed = listResponse.ok && Array.isArray(listPayload.data) ? listPayload.data : [];
+    const byId = new Map();
+    [...listed, ...current].forEach(match => {
+      const id = match.id || match.unique_id;
+      if (id) byId.set(String(id), match);
+    });
+
+    const imported = [...byId.values()].map(match => {
+      const name = String(match.name || match.title || "");
+      const teams = Array.isArray(match.teams) ? match.teams : [];
+      const home = teams[0] || name.split(/\\s+vs\\s+/i)[0] || "Team A";
+      const away = teams[1] || name.split(/\\s+vs\\s+/i)[1] || "Team B";
+      const providerStatus = String(match.status || "");
+      const isUpcoming = /not started|upcoming|scheduled|fixture/i.test(providerStatus);
+      const isFinished = /won by|drawn|match tied|abandoned|no result|completed|finished/i.test(providerStatus);
+      const status = isUpcoming ? "upcoming" : isFinished ? "finished" : "live";
+      const rawDate = match.dateTimeGMT || match.date || new Date().toISOString();
+      const start = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(rawDate))
+        ? String(rawDate) + "T12:00:00.000Z"
+        : String(rawDate);
+      const scores = Array.isArray(match.score) ? match.score : [];
+      const scoreText = scores.length
+        ? scores.map(item => `${item.inning ? item.inning + ": " : ""}${item.r ?? 0}/${item.w ?? 0} (${item.o ?? 0})`).join(" · ")
+        : (status === "upcoming" ? "—" : providerStatus || "Live");
+      const options = [
+        { label: home, odd: 1.90 },
+        { label: away, odd: 1.90 }
+      ];
+      return {
+        id: "cric_" + (match.id || match.unique_id),
+        provider: "CricAPI",
+        providerId: String(match.id || match.unique_id),
+        sport: "Cricket",
+        country: "International",
+        league: match.series || match.matchType?.toUpperCase() || "Cricket",
+        home, away, start, status, score: scoreText,
+        providerStatus,
+        venue: match.venue || "",
+        markets: [{ name: "Match Winner", options }]
+      };
+    }).filter(match => match.home && match.away && match.id !== "cric_undefined");
+
+    const existing = new Map(db.matches.map(match => [match.id, match]));
+    let changed = false;
+    for (const match of imported) {
+      const old = existing.get(match.id);
+      if (!old) {
+        db.matches.push(match);
+        changed = true;
+      } else {
+        const updated = { ...old, ...match, markets: old.markets?.length ? old.markets : match.markets };
+        if (JSON.stringify(old) !== JSON.stringify(updated)) {
+          Object.assign(old, updated);
+          changed = true;
+        }
+      }
+    }
+    if (changed) await writeDB(db);
+    cricApiMatchSync = { expiresAt: Date.now() + 60000, matches: imported };
+    return imported;
+  } catch (error) {
+    console.error("CricAPI Cricket sync failed:", error.message);
+    return cricApiMatchSync.matches;
+  }
+}
+
 // SPORTMONKS UPCOMING FIXTURE SYNC — cached for 60 seconds
 let sportmonksMatchSync = { expiresAt: 0, matches: [] };
 async function syncSportmonksUpcomingMatches(db) {
@@ -408,7 +492,7 @@ async function syncSportmonksUpcomingMatches(db) {
 app.get("/api/matches", async (req, res, next) => {
   try {
     const db = await readDB();
-    await syncSportmonksUpcomingMatches(db);
+    await syncSportmonksUpcomingMatches(db);\n    await syncCricApiMatches(db);
 
     let rows = db.matches;
 
