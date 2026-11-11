@@ -722,19 +722,23 @@ const AVIATOR_NEXT_ROUND_SECONDS = 5;
 function aviatorMultiplierAt(startedAt, now = Date.now()) {
   return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
 }
-function deriveAviatorCrash(serverSeed, clientSeed, nonce) {
+function deriveAviatorCrash(serverSeed, clientSeed, nonce, algorithm = "ROYAL-FLIGHT-PF-2") {
   const digest = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}`).digest("hex");
   const fraction = parseInt(digest.slice(0, 13), 16) / 0x10000000000000;
-  const crashAt = fraction < 0.01 ? 1 : Math.min(500, Math.max(1, Math.floor(99 / (1 - fraction)) / 100));
+  // PF-1 compatibility: preserve historical outcomes for old-round verification.
+  // PF-2: 1% instant-crash probability plus a 100/(1-u) conditional curve
+  // gives a consistent 99% theoretical return before the 500x cap.
+  const curveBase = algorithm === "ROYAL-FLIGHT-PF-1" ? 99 : 100;
+  const crashAt = fraction < 0.01 ? 1 : Math.min(500, Math.max(1, Math.floor(curveBase / (1 - fraction)) / 100));
   return { digest, crashAt: Number(crashAt.toFixed(2)) };
 }
 function verifyAviatorRecord(record) {
   if (!record?.serverSeed || !record?.serverSeedHash || !record?.clientSeed || record?.nonce == null) return { verified: false, error: "Verification data is incomplete." };
   const calculatedHash = crypto.createHash("sha256").update(record.serverSeed).digest("hex");
-  const derived = deriveAviatorCrash(record.serverSeed, record.clientSeed, record.nonce);
+  const derived = deriveAviatorCrash(record.serverSeed, record.clientSeed, record.nonce, record.algorithm || "ROYAL-FLIGHT-PF-1");
   const commitmentValid = calculatedHash === record.serverSeedHash;
   const resultMatches = derived.crashAt === Number(record.finalMultiplier);
-  return { verified: commitmentValid && resultMatches, commitmentValid, resultMatches, calculatedHash, calculatedCrashAt: derived.crashAt, recordedCrashAt: Number(record.finalMultiplier), digest: derived.digest, algorithm: "HMAC-SHA256(serverSeed, clientSeed:nonce), first 52 bits, 1% instant crash, 99% RTP formula, 500x cap" };
+  return { verified: commitmentValid && resultMatches, commitmentValid, resultMatches, calculatedHash, calculatedCrashAt: derived.crashAt, recordedCrashAt: Number(record.finalMultiplier), digest: derived.digest, algorithm: "HMAC-SHA256(serverSeed, clientSeed:nonce), first 52 bits, 1% instant crash, PF-2 99% theoretical RTP formula, 500x cap" };
 }
 function newAviatorRound(now = Date.now(), nonce = 1) {
   const serverSeed = crypto.randomBytes(32).toString("hex");
@@ -749,7 +753,7 @@ function newAviatorRound(now = Date.now(), nonce = 1) {
     bettingEndsAt: new Date(now + AVIATOR_BET_SECONDS * 1000).toISOString(),
     flightStartedAt: null,
     serverSeed, serverSeedHash, clientSeed, nonce,
-    algorithm: "ROYAL-FLIGHT-PF-1",
+    algorithm: "ROYAL-FLIGHT-PF-2",
     crashAt,
     crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE,
     bets: []
