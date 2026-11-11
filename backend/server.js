@@ -278,6 +278,16 @@ async function auth(req, res, next) {
   }
 }
 
+async function optionalAuth(req, res, next) {
+  try {
+    const token = (req.headers.authorization || "").replace(/^Bearer\\s+/i, "");
+    const db = await readDB();
+    const user = db.users.find(u => token && token === tokenFor(u.id));
+    if (user) { req.user = user; req.db = db; }
+    next();
+  } catch (error) { next(error); }
+}
+
 function admin(req, res, next) {
   if (req.user.role !== "admin") {
     return res.status(403).json({
@@ -851,7 +861,7 @@ async function tickAviatorRound() {
     );
   }
 }
-app.get("/api/aviator/state", async (req, res, next) => {
+app.get("/api/aviator/state", optionalAuth, async (req, res, next) => {
   try {
     await tickAviatorRound();
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
