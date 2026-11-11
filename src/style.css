@@ -355,3 +355,8 @@
 .aviatorMode .rfFlightArea+path{stroke-width:3.5}
 .aviatorMode .flightLine{stroke-dasharray:1400;stroke-dashoffset:0;filter:drop-shadow(0 0 7px #ff174b)!important}
 .aviatorMode .aviatorPlane{left:8%;top:76%;transform:translate(-50%,-50%) rotate(-12deg);will-change:left,top,transform}
+
+/* Phase 4: keep flight trail attached to the plane */
+.aviatorMode .rfFlightArea{opacity:.12!important}
+.aviatorMode .flightLine{stroke-dasharray:1400 1400;stroke-dashoffset:0;filter:drop-shadow(0 0 8px #ff174b)!important}
+.aviatorMode .aviatorPlane{z-index:5;pointer-events:none}
