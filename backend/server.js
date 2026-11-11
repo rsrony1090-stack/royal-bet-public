@@ -1386,6 +1386,82 @@ app.get("/api/sportmonks/test", async (req, res, next) => {
   }
 });
 
+// SPORTMONKS — Cricket API access test (live scores + upcoming fixtures)
+let sportmonksCricketTestCache = { expiresAt: 0, data: null };
+app.get("/api/sportmonks/cricket-test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    if (sportmonksCricketTestCache.data && sportmonksCricketTestCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksCricketTestCache.data, cached: true });
+    }
+
+    const startDate = new Date().toISOString().slice(0, 10);
+    const end = new Date();
+    end.setUTCDate(end.getUTCDate() + 30);
+    const endDate = end.toISOString().slice(0, 10);
+    const headers = { Authorization: apiToken, Accept: "application/json" };
+
+    const [liveResponse, fixturesResponse] = await Promise.all([
+      fetch("https://api.sportmonks.com/v3/cricket/livescores?include=participants;scores;state;league", {
+        headers, signal: AbortSignal.timeout(15000)
+      }),
+      fetch(`https://api.sportmonks.com/v3/cricket/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`, {
+        headers, signal: AbortSignal.timeout(20000)
+      })
+    ]);
+
+    const [livePayload, fixturesPayload] = await Promise.all([
+      liveResponse.json().catch(() => ({})),
+      fixturesResponse.json().catch(() => ({}))
+    ]);
+
+    if (!liveResponse.ok || !fixturesResponse.ok) {
+      const failed = !liveResponse.ok ? { endpoint: "cricket/livescores", response: liveResponse, payload: livePayload } :
+        { endpoint: "cricket/fixtures/between", response: fixturesResponse, payload: fixturesPayload };
+      console.error("Sportmonks Cricket API test failed:", failed.endpoint, failed.response.status);
+      return res.status(failed.response.status === 429 ? 429 : 502).json({
+        ok: false,
+        endpoint: failed.endpoint,
+        providerStatus: failed.response.status,
+        error: failed.payload?.message || failed.payload?.errors?.[0]?.detail || "Sportmonks Cricket API request failed. Check Cricket API plan access."
+      });
+    }
+
+    const live = Array.isArray(livePayload.data) ? livePayload.data : [];
+    const fixtures = Array.isArray(fixturesPayload.data) ? fixturesPayload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks Cricket",
+      dateRange: { start: startDate, end: endDate },
+      liveMatches: live.length,
+      upcomingMatches: fixtures.length,
+      liveSample: live.slice(0, 5).map(f => ({
+        id: f.id, name: f.name, startingAt: f.starting_at,
+        state: f.state?.name || f.state_id || null,
+        league: f.league?.name || null,
+        participants: (f.participants || []).map(p => p.name),
+        scores: f.scores || []
+      })),
+      upcomingSample: fixtures.slice(0, 10).map(f => ({
+        id: f.id, name: f.name, startingAt: f.starting_at,
+        state: f.state?.name || f.state_id || null,
+        league: f.league?.name || null,
+        participants: (f.participants || []).map(p => p.name)
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    sportmonksCricketTestCache = { data: result, expiresAt: Date.now() + 60000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // SPORTMONKS — upcoming football fixtures test (next 30 days by default)
 let sportmonksUpcomingCache = { key: "", expiresAt: 0, data: null };
 app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
