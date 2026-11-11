@@ -360,3 +360,6 @@
 .aviatorMode .rfFlightArea{opacity:.12!important}
 .aviatorMode .flightLine{stroke-dasharray:1400 1400;stroke-dashoffset:0;filter:drop-shadow(0 0 8px #ff174b)!important}
 .aviatorMode .aviatorPlane{z-index:5;pointer-events:none}
+
+/* Fix: !important positioning must read the live coordinates from JS */
+.aviatorMode .aviatorPlane{left:var(--rf-plane-x,8%)!important;top:var(--rf-plane-y,76%)!important}
