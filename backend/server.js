@@ -280,7 +280,7 @@ async function auth(req, res, next) {
 
 async function optionalAuth(req, res, next) {
   try {
-    const token = (req.headers.authorization || "").replace(/^Bearer\\s+/i, "");
+    const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     const db = await readDB();
     const user = db.users.find(u => token && token === tokenFor(u.id));
     if (user) { req.user = user; req.db = db; }
