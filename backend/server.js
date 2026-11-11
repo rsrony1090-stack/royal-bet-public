@@ -851,12 +851,13 @@ async function tickAviatorRound() {
     );
   }
 }
-app.get("/api/aviator/state", auth, async (req, res, next) => {
+app.get("/api/aviator/state", async (req, res, next) => {
   try {
     await tickAviatorRound();
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
-    const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
-    const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).toArray();
+    const viewerId = req.user?.id || null;
+    const ownBet = viewerId ? ((round.bets || []).find(b => b.userId === viewerId) || null) : null;
+    const history = viewerId ? await aviatorRoundCollection.find({ userId: viewerId }).sort({ settledAt: -1 }).toArray() : [];
     const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
     const topWins = await aviatorRoundCollection.find({ status: "won", payout: { $gt: 0 } }).sort({ payout: -1, settledAt: -1 }).limit(10).toArray();
     const now = Date.now();
@@ -877,7 +878,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
         players: new Set((round.bets || []).map(b => b.userId)).size
       },
       ownBet: ownBet ? { ...ownBet } : null,
-      ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b, panel: b.panel || 1 })),
+      ownBets: viewerId ? (round.bets || []).filter(b => b.userId === viewerId).map(b => ({ ...b, panel: b.panel || 1 })) : [],
       livePlayers: [...new Map((round.bets || []).map(b => [b.userId, { player: "Player #" + String(b.userId).slice(-4), bets: (round.bets || []).filter(x => x.userId === b.userId).length }])).values()],
       liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), panel: b.panel || 1, stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
       topWins: topWins.map(b => ({ player: "Player #" + String(b.userId).slice(-4), roundId: b.roundId, stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0, settledAt: b.settledAt, autoCashedOut: !!b.autoCashedOut })),
