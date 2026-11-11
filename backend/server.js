@@ -432,41 +432,69 @@ async function syncCricApiMatches(db) {
   }
 }
 
-// SPORTMONKS UPCOMING FIXTURE SYNC — cached for 60 seconds
+// SPORTMONKS FOOTBALL FIXTURE SYNC — live, upcoming and finished; cached for 60 seconds
 let sportmonksMatchSync = { expiresAt: 0, matches: [] };
 async function syncSportmonksUpcomingMatches(db) {
-  if (sportmonksMatchSync.expiresAt > Date.now()) {
-    return sportmonksMatchSync.matches;
-  }
+  if (sportmonksMatchSync.expiresAt > Date.now()) return sportmonksMatchSync.matches;
 
   const apiToken = process.env.SPORTMONKS_API_TOKEN;
   if (!apiToken) return [];
 
   try {
-    const startDate = new Date().toISOString().slice(0, 10);
-    const end = new Date();
-    end.setUTCDate(end.getUTCDate() + 30);
-    const endDate = end.toISOString().slice(0, 10);
-    const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`;
-    const response = await fetch(endpoint, {
-      headers: { Authorization: apiToken, Accept: "application/json" },
-      signal: AbortSignal.timeout(15000)
-    });
-    if (!response.ok) {
-      console.error("Sportmonks fixture sync HTTP", response.status);
-      return sportmonksMatchSync.matches;
-    }
+    const today = new Date();
+    const from = new Date(today);
+    from.setUTCDate(from.getUTCDate() - 7);
+    const to = new Date(today);
+    to.setUTCDate(to.getUTCDate() + 30);
+    const startDate = from.toISOString().slice(0, 10);
+    const endDate = to.toISOString().slice(0, 10);
+    const imported = [];
 
-    const payload = await response.json();
-    const fixtures = Array.isArray(payload.data) ? payload.data : [];
-    const imported = fixtures
-      .filter(f => f.starting_at && (!f.state?.name || /not started|scheduled/i.test(f.state.name)))
-      .map(f => {
-        const home = (f.participants || []).find(p => p.meta?.location === "home");
-        const away = (f.participants || []).find(p => p.meta?.location === "away");
-        if (!home || !away) return null;
-        const start = String(f.starting_at).replace(" ", "T") + "Z";
-        return {
+    // Fetch several pages so busy match days are not silently truncated.
+    for (let page = 1; page <= 5; page++) {
+      const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state;scores&per_page=50&page=${page}`;
+      const response = await fetch(endpoint, {
+        headers: { Authorization: apiToken, Accept: "application/json" },
+        signal: AbortSignal.timeout(20000)
+      });
+      if (!response.ok) {
+        console.error("Sportmonks fixture sync HTTP", response.status, await response.text().catch(() => ""));
+        break;
+      }
+
+      const payload = await response.json();
+      const fixtures = Array.isArray(payload.data) ? payload.data : [];
+      for (const f of fixtures) {
+        if (!f.starting_at) continue;
+        const participants = f.participants || [];
+        const home = participants.find(p => p.meta?.location === "home");
+        const away = participants.find(p => p.meta?.location === "away");
+        if (!home || !away) continue;
+
+        const rawStart = String(f.starting_at).replace(" ", "T");
+        const start = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawStart) ? rawStart : rawStart + "Z";
+        const stateName = String(f.state?.developer_name || f.state?.name || "").toLowerCase();
+        const isFinished = /finished|full time|\\bft\\b|after extra time|after penalties|cancelled|canceled|abandoned|walkover/.test(stateName);
+        const isUpcoming = /not started|scheduled|\\bns\\b|\\bnt\\b|fixture/.test(stateName) ||
+          (!stateName && Date.parse(start) > Date.now());
+        const status = isFinished ? "finished" : isUpcoming ? "upcoming" : "live";
+
+        const scores = Array.isArray(f.scores) ? f.scores : [];
+        const currentScores = scores.filter(x => /current|2nd half|fulltime|full time/i.test(String(x.description || "")));
+        const scoreRows = currentScores.length ? currentScores : scores;
+        const scoreByParticipant = new Map();
+        for (const row of scoreRows) {
+          const participantId = row.participant_id;
+          const goals = row.score?.goals ?? row.score?.score ?? row.goals;
+          if (participantId != null && goals != null) scoreByParticipant.set(String(participantId), Number(goals));
+        }
+        const homeScore = scoreByParticipant.get(String(home.id));
+        const awayScore = scoreByParticipant.get(String(away.id));
+        const score = homeScore != null && awayScore != null
+          ? `${homeScore} - ${awayScore}`
+          : status === "upcoming" ? "—" : "Score unavailable";
+
+        imported.push({
           id: "sm_" + f.id,
           provider: "Sportmonks",
           providerId: f.id,
@@ -476,8 +504,9 @@ async function syncSportmonksUpcomingMatches(db) {
           home: home.name,
           away: away.name,
           start,
-          status: "upcoming",
-          score: "—",
+          status,
+          score,
+          providerStatus: f.state?.name || f.state?.developer_name || status,
           markets: [
             { name: "Match Winner", options: [
               { label: home.name, odd: 1.85 },
@@ -489,20 +518,37 @@ async function syncSportmonksUpcomingMatches(db) {
               { label: "Under 2.5", odd: 1.90 }
             ]}
           ]
-        };
-      })
-      .filter(Boolean);
+        });
+      }
 
-    const existingIds = new Set(db.matches.map(m => m.id));
-    const newMatches = imported.filter(m => !existingIds.has(m.id));
-    if (newMatches.length) {
-      db.matches.push(...newMatches);
-      await writeDB(db);
+      const pagination = payload.pagination || {};
+      if (!fixtures.length || (!pagination.has_more && !pagination.next_page)) break;
     }
+
+    // Update existing provider fixtures as scores and states change; preserve manual/demo matches.
+    const existing = new Map(db.matches.map(m => [m.id, m]));
+    let changed = false;
+    for (const match of imported) {
+      const old = existing.get(match.id);
+      if (!old) {
+        db.matches.push(match);
+        existing.set(match.id, match);
+        changed = true;
+      } else {
+        const updated = { ...old, ...match, markets: old.markets?.length ? old.markets : match.markets };
+        if (JSON.stringify(old) !== JSON.stringify(updated)) {
+          Object.assign(old, updated);
+          changed = true;
+        }
+      }
+    }
+    if (changed) await writeDB(db);
+
     sportmonksMatchSync = { expiresAt: Date.now() + 60000, matches: imported };
+    console.log("Sportmonks football sync:", imported.length, "fixtures");
     return imported;
   } catch (error) {
-    console.error("Sportmonks fixture sync failed:", error.message);
+    console.error("Sportmonks football sync failed:", error.message);
     return sportmonksMatchSync.matches;
   }
 }
