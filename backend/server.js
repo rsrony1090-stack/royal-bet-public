@@ -473,10 +473,14 @@ async function syncSportmonksUpcomingMatches(db) {
 
         const rawStart = String(f.starting_at).replace(" ", "T");
         const start = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawStart) ? rawStart : rawStart + "Z";
-        const stateName = String(f.state?.developer_name || f.state?.name || "").toLowerCase();
-        const isFinished = /finished|full time|\\bft\\b|after extra time|after penalties|cancelled|canceled|abandoned|walkover/.test(stateName);
-        const isUpcoming = /not started|scheduled|\\bns\\b|\\bnt\\b|fixture/.test(stateName) ||
-          (!stateName && Date.parse(start) > Date.now());
+        const stateName = [f.state?.developer_name, f.state?.name]
+          .filter(Boolean).join(" ").toLowerCase();
+        const startTime = Date.parse(start);
+        const isFinished = /finished|full[ _-]?time|\\bft\\b|after extra time|after penalties|cancelled|canceled|abandoned|walkover/.test(stateName);
+        const isUpcoming = !isFinished && (
+          /not started|scheduled|\\bns\\b|\\bnt\\b|fixture|postponed|delayed/.test(stateName) ||
+          (Number.isFinite(startTime) && startTime > Date.now())
+        );
         const status = isFinished ? "finished" : isUpcoming ? "upcoming" : "live";
 
         const scores = Array.isArray(f.scores) ? f.scores : [];
