@@ -799,16 +799,28 @@ async function tickAviatorRound() {
         const target = Number(bet.autoCashoutAt || 0);
         if (bet.status !== "active" || !target || currentMultiplier < target || target >= round.crashAt) continue;
         const payout = Math.floor(bet.stake * target);
-        const won = await aviatorGlobalCollection.updateOne(
-          { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
-          { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": target, "bets.$.cashedOutAt": new Date(now).toISOString(), "bets.$.autoCashedOut": true } }
-        );
-        if (won.modifiedCount) {
-          const db = await readDB();
-          const user = db.users.find(u => u.id === bet.userId);
-          if (user) { user.points += payout; await writeDB(db); }
-          await saveAviatorHistory(round, { ...bet, autoCashedOut: true }, "won", target, payout);
+        const session = client.startSession();
+        let settled = false;
+        try {
+          await session.withTransaction(async () => {
+            const won = await aviatorGlobalCollection.updateOne(
+              { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
+              { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": target, "bets.$.cashedOutAt": new Date(now).toISOString(), "bets.$.autoCashedOut": true } },
+              { session }
+            );
+            if (!won.modifiedCount) return;
+            const credited = await stateCollection.updateOne(
+              { _id: "main", users: { $elemMatch: { id: bet.userId } } },
+              { $inc: { "users.$.points": payout } },
+              { session }
+            );
+            if (!credited.modifiedCount) throw new Error("Auto cashout balance credit failed");
+            settled = true;
+          });
+        } finally {
+          await session.endSession();
         }
+        if (settled) await saveAviatorHistory(round, { ...bet, autoCashedOut: true }, "won", target, payout);
       }
     }
     if (elapsed >= round.crashAtSeconds) {
@@ -959,9 +971,8 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
   }
 });
 app.post("/api/aviator/cashout", auth, async (req, res, next) => {
+  const session = client.startSession();
   try {
-    // Do not run the round ticker before processing a cashout: first read the
-    // current flying round and atomically claim the active bet.
     const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
     if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
     const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active" && (req.body?.betId ? b.betId === req.body.betId : (b.panel || 1) === Number(req.body?.panel || 1)));
@@ -974,18 +985,34 @@ app.post("/api/aviator/cashout", auth, async (req, res, next) => {
     }
     const multiplier = aviatorMultiplierAt(round.flightStartedAt, cashoutTime);
     const payout = Math.floor(bet.stake * multiplier);
-    const updated = await aviatorGlobalCollection.updateOne(
-      { _id: "current", roundId: round.roundId, phase: "flying", "bets": { $elemMatch: { betId: bet.betId, status: "active" } } },
-      { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": multiplier, "bets.$.cashedOutAt": new Date().toISOString() } }
-    );
-    if (!updated.modifiedCount) return res.status(409).json({ error: "Cash out was not accepted. Check the round status." });
-    const db = await readDB();
-    const user = db.users.find(u => u.id === req.user.id);
-    user.points += payout;
-    await writeDB(db);
+    let updatedUser = null;
+    let accepted = false;
+    await session.withTransaction(async () => {
+      const claimed = await aviatorGlobalCollection.updateOne(
+        { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
+        { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": multiplier, "bets.$.cashedOutAt": new Date(cashoutTime).toISOString() } },
+        { session }
+      );
+      if (!claimed.modifiedCount) return;
+      const credited = await stateCollection.updateOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { $inc: { "users.$.points": payout } },
+        { session }
+      );
+      if (!credited.modifiedCount) throw new Error("Cashout balance credit failed");
+      const state = await stateCollection.findOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { session, projection: { users: 1 } }
+      );
+      updatedUser = state?.users?.find(u => u.id === req.user.id) || null;
+      accepted = !!updatedUser;
+      if (!accepted) throw new Error("Cashout user balance could not be read");
+    });
+    if (!accepted) return res.status(409).json({ error: "Cash out was not accepted. Check the round status." });
     await saveAviatorHistory(round, bet, "won", multiplier, payout);
-    res.json({ result: "won", round: { id: round.roundId, stake: bet.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(user) });
+    res.json({ result: "won", round: { id: round.roundId, stake: bet.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(updatedUser) });
   } catch (error) { next(error); }
+  finally { await session.endSession(); }
 });
 
 // THERUNDOWN API — ADMIN-ONLY TEST ROUTES
