@@ -82,3 +82,37 @@
 .aviatorPlane{will-change:transform;backface-visibility:hidden;transition:none!important;left:8%;top:76%;}
 .aviatorSky:not(.crashed) .flightLine{animation:none!important;will-change:stroke-dashoffset;}
 .aviatorMultiplier{font-variant-numeric:tabular-nums;will-change:contents;}
+
+
+/* ROYAL FLIGHT - Aviator-inspired compact dark game layout */
+.rfTopbar{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#17191d;border:1px solid #292b30;border-radius:12px;margin:4px 0 8px}
+.rfBrand{font:italic 900 22px Oswald,sans-serif;color:#f23c61;letter-spacing:-.5px;line-height:1}.rfBrand b{color:#fff}.rfBrand small{display:block;margin-top:4px;font:700 8px 'DM Sans',sans-serif;letter-spacing:2px;color:#8b9098}
+.rfBalance{margin-left:auto;color:#aeb2b8;font-size:11px;font-weight:800}.rfBalance span{color:#45d34c;font-size:20px}
+.rfRoundTag{padding:7px 10px;border-radius:20px;background:#25282d;color:#aeb7c1;font-size:9px;font-weight:900;letter-spacing:.7px}
+.rfRecentStrip{display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap;padding:9px 3px 11px;scrollbar-width:none}.rfRecentStrip>span{color:#858b93;font-size:9px;font-weight:900;letter-spacing:1px;margin-right:3px}.rfRecentStrip b{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:800}.rfHigh{color:#b78aff;background:#292039}.rfLow{color:#54b9ef;background:#172b3b}
+.aviatorShell{background:#101113!important;border:1px solid #292b30!important;border-radius:16px!important;padding:8px!important;box-shadow:none!important}
+.aviatorGame{background:transparent!important;border:0!important;padding:0!important;margin:0!important}
+.aviatorSky{height:clamp(320px,55vw,560px)!important;min-height:320px;border-radius:14px!important;border:1px solid #292b30!important;background:repeating-conic-gradient(from 235deg at 0% 100%,#17191d 0deg 12deg,#0a0b0d 12deg 24deg)!important;isolation:isolate}
+.aviatorSky:before,.aviatorSky:after{display:none}
+.aviatorSky:after{display:none}
+.aviatorGrid{background:radial-gradient(ellipse at 45% 75%,#1678a855,transparent 52%)!important;transform:none!important;inset:0!important;opacity:1!important}
+.aviatorMultiplier{font:800 clamp(58px,11vw,100px) 'DM Sans',sans-serif!important;text-shadow:0 0 25px #1688c866!important;letter-spacing:-3px}
+.aviatorPlane{color:#f32950!important;font-size:48px!important;filter:drop-shadow(0 0 10px #f32950)!important}
+.flightLine{stroke:#f32950!important;filter:drop-shadow(0 0 8px #f32950)!important}
+.aviatorHint{background:#101113aa!important;color:#b6bdc5!important;font-size:10px!important}
+.aviatorSkyFooter{color:#8b929a!important}
+.aviatorBetPanels{gap:9px!important;margin-top:9px!important}
+.aviatorBetPanel{background:#191b1f!important;border:1px solid #292c31!important;border-radius:14px!important;padding:12px!important}
+.aviatorPanelTabs{border:0!important;margin-bottom:10px!important;padding-bottom:4px!important}
+.aviatorPanelTabs b{color:#d5d8dc!important}
+.aviatorStakeHead{color:#bfc4ca!important}
+.aviatorStakeInput button,.aviatorQuickAmounts button{background:#25282d!important;border-color:#30343a!important;border-radius:22px!important}
+.aviatorStakeInput input{background:#101113!important;border-color:#30343a!important;border-radius:22px!important}
+.aviatorAutoCashout{background:#141c19!important;border-color:#273c32!important}
+.aviatorQuickAmounts button{border-radius:22px!important}
+.aviatorMainAction{min-height:68px!important;border-radius:16px!important;font-size:17px!important}
+.aviatorBet{background:#20b51d!important;color:#fff!important;box-shadow:0 3px 0 #147b14}
+.aviatorCash{background:#e78300!important;color:#fff!important;box-shadow:0 3px 0 #a95800}
+.aviatorControlBar{background:#191b1f!important;border-color:#292c31!important}
+.aviatorLiveCard{background:#191b1f!important;border-color:#292c31!important}
+@media(max-width:640px){.rfTopbar{padding:11px 12px}.rfBrand{font-size:19px}.rfBalance span{font-size:18px}.rfRecentStrip{gap:6px}.aviatorShell{padding:6px!important}.aviatorSky{height:clamp(320px,82vw,430px)!important;min-height:320px}.aviatorBetPanels{grid-template-columns:1fr!important}.aviatorBetPanel{padding:12px!important}.aviatorMainAction{min-height:72px!important;font-size:18px!important}.aviatorControlBar{gap:7px}.aviatorControlBar button{font-size:9px;padding:8px 9px}}
