@@ -461,10 +461,10 @@ app.post("/api/predictions", auth, async (req, res, next) => {
     if (
       !Number.isInteger(stake) ||
       stake < 10 ||
-      stake > 5000
+      stake > 10000
     ) {
       return res.status(400).json({
-        error: "Points must be 10–5000"
+        error: "Points must be 10–10000"
       });
     }
 
@@ -902,8 +902,8 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     if (autoCashoutAt !== null && (!Number.isFinite(autoCashoutAt) || autoCashoutAt < 1.1 || autoCashoutAt > 1000)) {
       return res.status(400).json({ error: "Auto cashout must be between 1.10x and 1000x" });
     }
-    if (!Number.isInteger(stake) || stake < 10 || stake > 5000) {
-      return res.status(400).json({ error: "Bet must be 10–5000 demo points" });
+    if (!Number.isInteger(stake) || stake < 10 || stake > 10000) {
+      return res.status(400).json({ error: "Bet must be 10–10000 demo points" });
     }
 
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
