@@ -357,14 +357,14 @@ async function syncCricApiMatches(db) {
     const imported = [...byId.values()].map(match => {
       const name = String(match.name || match.title || "");
       const teams = Array.isArray(match.teams) ? match.teams : [];
-      const home = teams[0] || name.split(/\\s+vs\\s+/i)[0] || "Team A";
-      const away = teams[1] || name.split(/\\s+vs\\s+/i)[1] || "Team B";
+      const home = teams[0] || name.split(/\s+vs\s+/i)[0] || "Team A";
+      const away = teams[1] || name.split(/\s+vs\s+/i)[1] || "Team B";
       const providerStatus = String(match.status || "");
       const isUpcoming = /not started|upcoming|scheduled|fixture/i.test(providerStatus);
       const isFinished = /won by|drawn|match tied|abandoned|no result|completed|finished/i.test(providerStatus);
       const status = isUpcoming ? "upcoming" : isFinished ? "finished" : "live";
       const rawDate = match.dateTimeGMT || match.date || new Date().toISOString();
-      const start = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(rawDate))
+      const start = /^\d{4}-\d{2}-\d{2}$/.test(String(rawDate))
         ? String(rawDate) + "T12:00:00.000Z"
         : String(rawDate);
       const scores = Array.isArray(match.score) ? match.score : [];
@@ -492,7 +492,8 @@ async function syncSportmonksUpcomingMatches(db) {
 app.get("/api/matches", async (req, res, next) => {
   try {
     const db = await readDB();
-    await syncSportmonksUpcomingMatches(db);\n    await syncCricApiMatches(db);
+    await syncSportmonksUpcomingMatches(db);
+    await syncCricApiMatches(db);
 
     let rows = db.matches;
 
