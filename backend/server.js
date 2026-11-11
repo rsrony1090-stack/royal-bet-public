@@ -858,6 +858,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
     const ownBet = (round.bets || []).find(b => b.userId === req.user.id) || null;
     const history = await aviatorRoundCollection.find({ userId: req.user.id }).sort({ settledAt: -1 }).toArray();
     const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
+    const topWins = await aviatorRoundCollection.find({ status: "won", payout: { $gt: 0 } }).sort({ payout: -1, settledAt: -1 }).limit(10).toArray();
     const now = Date.now();
     res.json({
       round: {
@@ -879,7 +880,7 @@ app.get("/api/aviator/state", auth, async (req, res, next) => {
       ownBets: (round.bets || []).filter(b => b.userId === req.user.id).map(b => ({ ...b, panel: b.panel || 1 })),
       livePlayers: [...new Map((round.bets || []).map(b => [b.userId, { player: "Player #" + String(b.userId).slice(-4), bets: (round.bets || []).filter(x => x.userId === b.userId).length }])).values()],
       liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), panel: b.panel || 1, stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
-      topWins: (round.bets || []).filter(b => b.status === "won").sort((a,b) => (b.payout||0)-(a.payout||0)).slice(0,5).map(b => ({ player: "Player #" + String(b.userId).slice(-4), stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0 })),
+      topWins: topWins.map(b => ({ player: "Player #" + String(b.userId).slice(-4), roundId: b.roundId, stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0, settledAt: b.settledAt, autoCashedOut: !!b.autoCashedOut })),
       crashHistory,
       history
     });
