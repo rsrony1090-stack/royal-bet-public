@@ -116,3 +116,32 @@
 .aviatorControlBar{background:#191b1f!important;border-color:#292c31!important}
 .aviatorLiveCard{background:#191b1f!important;border-color:#292c31!important}
 @media(max-width:640px){.rfTopbar{padding:11px 12px}.rfBrand{font-size:19px}.rfBalance span{font-size:18px}.rfRecentStrip{gap:6px}.aviatorShell{padding:6px!important}.aviatorSky{height:clamp(320px,82vw,430px)!important;min-height:320px}.aviatorBetPanels{grid-template-columns:1fr!important}.aviatorBetPanel{padding:12px!important}.aviatorMainAction{min-height:72px!important;font-size:18px!important}.aviatorControlBar{gap:7px}.aviatorControlBar button{font-size:9px;padding:8px 9px}}
+
+
+/* Compact ROYAL FLIGHT bet panels */
+.aviatorBetPanels{gap:8px!important;margin-top:8px!important}
+.aviatorBetPanel{padding:10px!important;border-radius:12px!important}
+.aviatorPanelTabs{padding-bottom:2px!important;margin-bottom:7px!important}
+.aviatorPanelTabs b{font-size:12px!important}
+.aviatorPanelTabs span{font-size:8px!important}
+.aviatorStakeHead{font-size:9px!important}
+.aviatorStakeInput{gap:5px!important;margin:6px 0!important}
+.aviatorStakeInput button{padding:6px 10px!important;font-size:11px!important}
+.aviatorStakeInput input{height:36px!important;font-size:15px!important}
+.aviatorAutoCashout{margin:7px 0!important;padding:7px 9px!important;gap:7px!important}
+.aviatorAutoCashout label{font-size:9px!important}
+.aviatorAutoCashout input{padding:5px 7px!important;font-size:11px!important}
+.aviatorAutoCashout small{font-size:8px!important;margin-top:-3px!important}
+.aviatorQuickAmounts{gap:4px!important;margin:2px 0 9px!important}
+.aviatorQuickAmounts button{padding:6px 3px!important;font-size:9px!important}
+.aviatorMainAction{min-height:54px!important;font-size:14px!important;border-radius:12px!important}
+.aviatorPanelFoot{margin-top:7px!important;font-size:7px!important}
+@media(max-width:640px){
+ .aviatorBetPanels{gap:7px!important}
+ .aviatorBetPanel{padding:9px!important}
+ .aviatorStakeInput input{height:34px!important}
+ .aviatorAutoCashout{margin:6px 0!important;padding:6px 8px!important}
+ .aviatorQuickAmounts{margin-bottom:8px!important}
+ .aviatorMainAction{min-height:50px!important;font-size:13px!important}
+ .aviatorPanelFoot{margin-top:6px!important}
+}
