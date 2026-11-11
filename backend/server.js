@@ -1462,6 +1462,81 @@ app.get("/api/sportmonks/cricket-test", async (req, res, next) => {
   }
 });
 
+// CRICAPI — verify Cricket API key and retrieve current/upcoming matches
+let cricApiTestCache = { expiresAt: 0, data: null };
+app.get("/api/cricket/test", async (req, res, next) => {
+  try {
+    const apiKey = process.env.CRICAPI_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ ok: false, error: "CRICAPI_KEY is not configured on the backend." });
+    }
+    if (cricApiTestCache.data && cricApiTestCache.expiresAt > Date.now()) {
+      return res.json({ ...cricApiTestCache.data, cached: true });
+    }
+
+    const headers = { Accept: "application/json" };
+    const urls = [
+      `https://api.cricapi.com/v1/currentMatches?apikey=${encodeURIComponent(apiKey)}&offset=0`,
+      `https://api.cricapi.com/v1/matches?apikey=${encodeURIComponent(apiKey)}&offset=0`
+    ];
+    const responses = await Promise.all(urls.map(url =>
+      fetch(url, { headers, signal: AbortSignal.timeout(15000) })
+    ));
+    const payloads = await Promise.all(responses.map(response =>
+      response.json().catch(() => ({}))
+    ));
+
+    const current = payloads[0];
+    const allMatches = payloads[1];
+    const currentOk = responses[0].ok && current.status !== "failure" && Array.isArray(current.data);
+    const matchesOk = responses[1].ok && allMatches.status !== "failure" && Array.isArray(allMatches.data);
+
+    if (!currentOk && !matchesOk) {
+      const failed = current?.reason || current?.message || allMatches?.reason || allMatches?.message ||
+        `Provider returned HTTP ${responses[0].status}/${responses[1].status}`;
+      return res.status(502).json({
+        ok: false,
+        provider: "CricAPI",
+        error: String(failed).slice(0, 300)
+      });
+    }
+
+    const live = currentOk ? current.data : [];
+    const matches = matchesOk ? allMatches.data : [];
+    const result = {
+      ok: true,
+      provider: "CricAPI",
+      currentMatches: live.length,
+      matchList: matches.length,
+      liveSample: live.slice(0, 8).map(m => ({
+        id: m.id || m.unique_id || null,
+        name: m.name || m.title || null,
+        status: m.status || null,
+        matchType: m.matchType || null,
+        venue: m.venue || null,
+        date: m.date || m.dateTimeGMT || null,
+        teams: m.teams || [],
+        score: m.score || []
+      })),
+      upcomingSample: matches.filter(m => /upcoming|fixture|not started/i.test(String(m.status || ""))).slice(0, 8).map(m => ({
+        id: m.id || m.unique_id || null,
+        name: m.name || m.title || null,
+        status: m.status || null,
+        matchType: m.matchType || null,
+        venue: m.venue || null,
+        date: m.date || m.dateTimeGMT || null,
+        teams: m.teams || []
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    cricApiTestCache = { data: result, expiresAt: Date.now() + 60000 };
+    return res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // SPORTMONKS — upcoming football fixtures test (next 30 days by default)
 let sportmonksUpcomingCache = { key: "", expiresAt: 0, data: null };
 app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
