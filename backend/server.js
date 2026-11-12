@@ -195,6 +195,7 @@ let aviatorRoundCollection;
 let aviatorGlobalCollection;
 let aviatorCrashHistoryCollection;
 let aviatorConfigCollection;
+let superAceConfigCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -206,6 +207,8 @@ async function initializeDatabase() {
   aviatorGlobalCollection = database.collection("aviator_global_round");
   aviatorCrashHistoryCollection = database.collection("aviator_crash_history");
   aviatorConfigCollection = database.collection("aviator_config");
+  superAceConfigCollection = database.collection("super_ace_config");
+  await superAceConfigCollection.updateOne({ _id: "settings" }, { $setOnInsert: { mode: "fair", winChance: 20, enabled: true, updatedAt: new Date().toISOString() } }, { upsert: true });
   await aviatorConfigCollection.updateOne({ _id: "settings" }, { $setOnInsert: { mode: "auto", manualMultiplier: 2, updatedAt: new Date().toISOString() } }, { upsert: true });
   await aviatorCrashHistoryCollection.createIndex({ roundId: 1 }, { unique: true });
   await aviatorRoundCollection.createIndex({ userId: 1, settledAt: -1 });
@@ -956,6 +959,25 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
 });
 
 
+
+// SUPER ACE VIRTUAL DEMO CONFIGURATION
+app.get("/api/super-ace/config", async (req, res, next) => {
+  try {
+    const c = await superAceConfigCollection.findOne({ _id: "settings" });
+    res.json({ mode: c?.mode || "fair", winChance: c?.winChance || 20, enabled: c?.enabled !== false });
+  } catch (error) { next(error); }
+});
+app.post("/api/admin/super-ace-config", auth, admin, async (req, res, next) => {
+  try {
+    const mode = req.body?.mode === "boost" ? "boost" : "fair";
+    const winChance = Number(req.body?.winChance);
+    if (!Number.isFinite(winChance) || winChance < 1 || winChance > 60) return res.status(400).json({ error: "Demo win chance must be between 1 and 60 percent." });
+    const enabled = req.body?.enabled !== false;
+    const update = { mode, winChance, enabled, updatedAt: new Date().toISOString(), updatedBy: req.user.id };
+    await superAceConfigCollection.updateOne({ _id: "settings" }, { $set: update }, { upsert: true });
+    res.json({ success: true, ...update });
+  } catch (error) { next(error); }
+});
 
 // ADMIN-ONLY AVIATOR DEMO RESULT CONTROL. Changes apply to the next round.
 app.get("/api/admin/aviator-config", auth, admin, async (req, res, next) => {
