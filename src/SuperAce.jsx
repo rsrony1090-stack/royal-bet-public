@@ -1,0 +1,26 @@
+import React,{useEffect,useState} from "react";
+import "./super-ace.css";
+
+const symbols=["🍒","🍋","🍉","🍇","🔔","💎","🃏"];
+const pay={ "🍒":2,"🍋":2,"🍉":3,"🍇":4,"🔔":6,"💎":12,"🃏":20 };
+const money=n=>Number(n||0).toLocaleString("en-US");
+export default function SuperAce({api,user}){
+ const [config,setConfig]=useState({mode:"fair",winChance:20,enabled:true});
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[reels,setReels]=useState(["🍒","🍋","🍇","🔔","🍉"]),[bet,setBet]=useState(10);
+ const [credits,setCredits]=useState(()=>Number(localStorage.getItem("sa_demo_credits")||1000));
+ const [adminMode,setAdminMode]=useState("fair"),[adminChance,setAdminChance]=useState(20),[saving,setSaving]=useState(false);
+ async function load(){try{const c=await api("/api/super-ace/config");setConfig(c);setAdminMode(c.mode||"fair");setAdminChance(Number(c.winChance||20));}catch(e){setNotice("Game settings load hoyni. Backend check koro.");}}
+ useEffect(()=>{load()},[]);
+ function saveCredits(n){setCredits(n);localStorage.setItem("sa_demo_credits",String(n));}
+ async function saveConfig(){setSaving(true);try{const c=await api("/api/admin/super-ace-config",{method:"POST",body:JSON.stringify({mode:adminMode,winChance:Number(adminChance),enabled:config.enabled})});setConfig(c);setNotice("Super Ace settings saved.");}catch(e){setNotice(e.message||"Settings save hoyni.");}finally{setSaving(false)}}
+ async function toggleGame(){setSaving(true);try{const c=await api("/api/admin/super-ace-config",{method:"POST",body:JSON.stringify({mode:adminMode,winChance:Number(adminChance),enabled:!config.enabled})});setConfig(c);setNotice(c.enabled?"Game enabled.":"Game disabled.");}catch(e){setNotice(e.message||"Update failed.");}finally{setSaving(false)}}
+ function spin(){if(!config.enabled||busy)return;const amount=Math.max(1,Math.min(500,Math.floor(Number(bet)||0)));if(amount>credits){setNotice("Demo credits kom ache.");return;}setBusy(true);saveCredits(credits-amount);let result;
+ const boosted=config.mode==="boost";const hit=Math.random()*100<Number(config.winChance||20);
+ if(hit){const sym=symbols[Math.floor(Math.random()*6)];const count=3+Math.floor(Math.random()*3);result=Array.from({length:5},()=>symbols[Math.floor(Math.random()*symbols.length)]);const start=Math.floor(Math.random()*(6-count+1));for(let i=start;i<start+count;i++)result[i]=sym;const win=amount*pay[sym]*(count===3?1:count===4?2:5);setTimeout(()=>{setReels(result);saveCredits(credits-amount+win);setNotice(`WIN! ${count} ${sym} · +${money(win)} demo credits`);setBusy(false)},650);
+ }else{result=Array.from({length:5},()=>symbols[Math.floor(Math.random()*symbols.length)]);setTimeout(()=>{setReels(result);setNotice("No win this spin. Try again.");setBusy(false)},650);}
+ }
+ return <div className="sa-wrap"><div className="sa-head"><div><small>ROYAL BET ORIGINAL · VIRTUAL DEMO</small><h1>🃏 SUPER ACE</h1><p>Slot-style demo game · no cash value</p></div><div className="sa-wallet"><small>DEMO CREDITS</small><b>{money(credits)}</b></div></div>
+ {!config.enabled?<div className="sa-disabled">This demo game is currently disabled by admin.</div>:<><div className="sa-machine"><div className="sa-status">{config.mode==="boost"?"DEMO BOOST MODE":"FAIR RANDOM MODE"} · {config.winChance}% demo win chance</div><div className="sa-reels">{reels.map((s,i)=><div className="sa-reel" key={i}>{busy?"✦":s}</div>)}</div><div className="sa-paytable">{Object.entries(pay).map(([s,v])=><span key={s}>{s} <b>{v}x</b></span>)}</div><div className="sa-controls"><label>BET <input type="number" min="1" max="500" value={bet} disabled={busy} onChange={e=>setBet(e.target.value)}/></label><div className="sa-quick">{[10,25,50,100].map(n=><button key={n} disabled={busy} onClick={()=>setBet(n)}>{n}</button>)}</div><button className="sa-spin" disabled={busy} onClick={spin}>{busy?"SPINNING…":"SPIN"}</button></div><div className="sa-message">{notice||"Match 3 or more symbols to win demo credits."}</div></div><p className="sa-disclaimer">This is a locally simulated virtual-credit game. Demo Boost is visibly labelled and changes only the displayed demo win probability. No deposits, withdrawals, or real-money prizes.</p></>}
+ {user?.role==="admin"&&<section className="sa-admin"><div><h3>Super Ace · Admin Control</h3><small>ADMIN ONLY · GLOBAL GAME SETTINGS</small></div><label className="sa-switch"><input type="checkbox" checked={config.enabled} onChange={toggleGame}/> Game {config.enabled?"ON":"OFF"}</label><div className="sa-admin-grid"><label>Mode<select value={adminMode} onChange={e=>setAdminMode(e.target.value)}><option value="fair">Fair random</option><option value="boost">Demo Boost (visible to players)</option></select></label><label>Demo win chance (%)<input type="number" min="1" max="60" value={adminChance} onChange={e=>setAdminChance(e.target.value)}/></label></div><button className="sa-save" disabled={saving} onClick={saveConfig}>{saving?"SAVING…":"SAVE SETTINGS"}</button><small>Fair mode default: 20%. Boost mode must remain visibly identified on the game screen. Maximum configured chance: 60%.</small></section>}
+ </div>;
+}
