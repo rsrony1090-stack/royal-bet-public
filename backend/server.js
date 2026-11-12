@@ -1175,8 +1175,14 @@ app.post("/api/aviator/start", auth, async (req, res, next) => {
     const round = await aviatorGlobalCollection.findOne({ _id: "current" });
     if (round?.algorithm === "ROYAL-FLIGHT-PF-3" || round?.algorithm === "ROYAL-FLIGHT-PF-2" || round?.algorithm === "ROYAL-FLIGHT-PF-1") {
       const committedHash = crypto.createHash("sha256").update(String(round.serverSeed || "")).digest("hex");
-      const committedCrash = deriveAviatorCrash(round.serverSeed, round.clientSeed, round.nonce, round.algorithm).crashAt;
-      if (committedHash !== round.serverSeedHash || committedCrash !== Number(round.crashAt)) {
+      // Manual demo rounds intentionally use the admin-selected multiplier,
+      // so only verify the pre-round seed commitment for those rounds.
+      // AUTO rounds must also match the deterministic fair crash result.
+      const manualDemoRound = round.resultMode === "manual";
+      const committedCrash = manualDemoRound
+        ? null
+        : deriveAviatorCrash(round.serverSeed, round.clientSeed, round.nonce, round.algorithm).crashAt;
+      if (committedHash !== round.serverSeedHash || (!manualDemoRound && committedCrash !== Number(round.crashAt))) {
         return res.status(503).json({ error: "Fairness commitment check failed. This round is paused." });
       }
     }
