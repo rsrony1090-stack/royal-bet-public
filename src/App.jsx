@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from "react";
 import SuperAce from "./SuperAce.jsx";
-import {Trophy,Menu,Search,Star,Activity,User,LogOut,Ticket,Wallet,Shield,Plus,Trash2,ChevronDown,Clock,Flame,Globe,Star} from "lucide-react";
+import {Trophy,Menu,Search,Star,Activity,User,LogOut,Ticket,Wallet,Shield,Plus,Trash2,ChevronDown,Clock,Flame,Globe} from "lucide-react";
 
 const API=import.meta.env.VITE_API_URL||"http://localhost:5000";
 const sports=["All","Football","Cricket","Tennis","Basketball","Volleyball","Hockey","Badminton","Table Tennis","Baseball","Rugby","Boxing","MMA","Esports","Handball","Golf","Cycling","Darts","Snooker","Formula 1"];
