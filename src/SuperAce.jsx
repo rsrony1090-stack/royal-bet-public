@@ -42,7 +42,7 @@ function Card({symbol,small=false,highlight=false}){
  const tone=s?.tone|| (symbol===WILD?"wild":symbol===GOLD?"gold":symbol===SCATTER?"scatter":"black");
  const label=s?.name||(symbol===WILD?"WILD":symbol===GOLD?"GOLD":symbol===SCATTER?"SCATTER":"");
  return <div className={"sa-card sa-"+tone+(highlight?" sa-hit":"")+(small?" sa-small":"")}>
-  {s?<><span className="sa-card-rank">{symbol==="S"||symbol==="H"||symbol==="C"||symbol==="D"?"":symbol}</span><span className="sa-card-art">{symbol==="K"?"♛":symbol==="Q"?"♕":symbol==="J"?"♞":s.glyph}</span><span className="sa-card-suit">{s.glyph}</span></>:<><span className="sa-special-label">{label}</span><span className="sa-special-art">{ICONS[symbol]}</span><span className="sa-special-label sa-bottom">{label}</span></>}
+  {s?<><span className="sa-card-rank">{symbol==="S"||symbol==="H"||symbol==="C"||symbol==="D"?"":symbol}</span><span className="sa-card-art">{symbol==="K"?"♛":symbol==="Q"?"♕":symbol==="J"?"♞":s.glyph}</span><span className="sa-card-suit">{s.glyph}</span></>:<><span className="sa-special-label">{label}</span><span className="sa-special-art">{ICONS[symbol]}</span><span className="sa-special-label sa-card-bottom">{label}</span></>}
  </div>
 }
 export default function SuperAce({api,user}){
