@@ -194,6 +194,7 @@ let providerTestCollection;
 let aviatorRoundCollection;
 let aviatorGlobalCollection;
 let aviatorCrashHistoryCollection;
+let aviatorConfigCollection;
 
 async function initializeDatabase() {
   await client.connect();
@@ -204,6 +205,8 @@ async function initializeDatabase() {
   aviatorRoundCollection = database.collection("aviator_rounds");
   aviatorGlobalCollection = database.collection("aviator_global_round");
   aviatorCrashHistoryCollection = database.collection("aviator_crash_history");
+  aviatorConfigCollection = database.collection("aviator_config");
+  await aviatorConfigCollection.updateOne({ _id: "settings" }, { $setOnInsert: { mode: "auto", manualMultiplier: 2, updatedAt: new Date().toISOString() } }, { upsert: true });
   await aviatorCrashHistoryCollection.createIndex({ roundId: 1 }, { unique: true });
   await aviatorRoundCollection.createIndex({ userId: 1, settledAt: -1 });
   await aviatorGlobalCollection.createIndex({ roundId: 1 });
@@ -954,6 +957,22 @@ app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
 
 
 
+// ADMIN-ONLY AVIATOR DEMO RESULT CONTROL. Changes apply to the next round.
+app.get("/api/admin/aviator-config", auth, admin, async (req, res, next) => {
+  try { const config = await aviatorConfigCollection.findOne({ _id: "settings" }); res.json({ mode: config?.mode || "auto", manualMultiplier: config?.manualMultiplier || 2 }); } catch (error) { next(error); }
+});
+app.post("/api/admin/aviator-config", auth, admin, async (req, res, next) => {
+  try {
+    const mode = req.body?.mode === "manual" ? "manual" : req.body?.mode === "auto" ? "auto" : null;
+    const multiplier = Number(req.body?.manualMultiplier);
+    if (!mode) return res.status(400).json({ error: "Mode must be manual or auto." });
+    if (mode === "manual" && (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 500)) return res.status(400).json({ error: "Manual demo multiplier must be between 1.00x and 500.00x." });
+    const update = { mode, manualMultiplier: mode === "manual" ? Number(multiplier.toFixed(2)) : (Number.isFinite(multiplier) ? Number(multiplier.toFixed(2)) : 2), updatedAt: new Date().toISOString(), updatedBy: req.user.id };
+    await aviatorConfigCollection.updateOne({ _id: "settings" }, { $set: update }, { upsert: true });
+    res.json({ success: true, ...update, note: "Applies from the next round; current round remains unchanged." });
+  } catch (error) { next(error); }
+});
+
 // SHARED AVIATOR DEMO — one global round for every player
 const AVIATOR_GROWTH_RATE = 0.13;
 const AVIATOR_BET_SECONDS = 5;
@@ -973,17 +992,20 @@ function deriveAviatorCrash(serverSeed, clientSeed, nonce, algorithm = "ROYAL-FL
 }
 function verifyAviatorRecord(record) {
   if (!record?.serverSeed || !record?.serverSeedHash || !record?.clientSeed || record?.nonce == null) return { verified: false, error: "Verification data is incomplete." };
+  if (record.resultMode === "manual") return { verified: false, manualDemoResult: true, error: "Admin-set demo result; this round is not a provably-fair AUTO round." };
   const calculatedHash = crypto.createHash("sha256").update(record.serverSeed).digest("hex");
   const derived = deriveAviatorCrash(record.serverSeed, record.clientSeed, record.nonce, record.algorithm || "ROYAL-FLIGHT-PF-1");
   const commitmentValid = calculatedHash === record.serverSeedHash;
   const resultMatches = derived.crashAt === Number(record.finalMultiplier);
   return { verified: commitmentValid && resultMatches, commitmentValid, resultMatches, calculatedHash, calculatedCrashAt: derived.crashAt, recordedCrashAt: Number(record.finalMultiplier), digest: derived.digest, algorithm: "HMAC-SHA256(serverSeed, clientSeed:nonce), first 52 bits, 99/(1-u) crash curve, 99% theoretical gross RTP before cap and rounding, 500x cap" };
 }
-function newAviatorRound(now = Date.now(), nonce = 1) {
+function newAviatorRound(now = Date.now(), nonce = 1, config = { mode: "auto", manualMultiplier: 2 }) {
   const serverSeed = crypto.randomBytes(32).toString("hex");
   const clientSeed = "royal-flight-shared-demo";
   const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
-  const crashAt = deriveAviatorCrash(serverSeed, clientSeed, nonce).crashAt;
+  const fairCrashAt = deriveAviatorCrash(serverSeed, clientSeed, nonce).crashAt;
+  const resultMode = config?.mode === "manual" ? "manual" : "auto";
+  const crashAt = resultMode === "manual" ? Number(config.manualMultiplier) : fairCrashAt;
   const createdAt = new Date(now).toISOString();
   return {
     roundId: "av_" + crypto.randomUUID(),
@@ -993,6 +1015,8 @@ function newAviatorRound(now = Date.now(), nonce = 1) {
     flightStartedAt: null,
     serverSeed, serverSeedHash, clientSeed, nonce,
     algorithm: "ROYAL-FLIGHT-PF-3",
+    resultMode,
+    manualMultiplier: resultMode === "manual" ? crashAt : null,
     crashAt,
     crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE,
     bets: []
@@ -1023,7 +1047,8 @@ async function tickAviatorRound() {
   const now = Date.now();
   let round = await aviatorGlobalCollection.findOne({ _id: "current" });
   if (!round) {
-    const initial = { _id: "current", ...newAviatorRound(now) };
+    const config = await aviatorConfigCollection.findOne({ _id: "settings" });
+    const initial = { _id: "current", ...newAviatorRound(now, 1, config) };
     await aviatorGlobalCollection.updateOne({ _id: "current" }, { $setOnInsert: initial }, { upsert: true });
     return;
   }
@@ -1074,7 +1099,7 @@ async function tickAviatorRound() {
       if (crashed.modifiedCount) {
         await aviatorCrashHistoryCollection.updateOne(
           { roundId: round.roundId },
-          { $setOnInsert: { roundId: round.roundId, finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt, serverSeed: round.serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: round.clientSeed, nonce: round.nonce, algorithm: round.algorithm } },
+          { $setOnInsert: { roundId: round.roundId, resultMode: round.resultMode || "auto", finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt, serverSeed: round.serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: round.clientSeed, nonce: round.nonce, algorithm: round.algorithm } },
           { upsert: true }
         );
         for (const bet of (round.bets || [])) {
@@ -1087,7 +1112,7 @@ async function tickAviatorRound() {
   if (round?.phase === "crashed" && now - new Date(round.finishedAt).getTime() >= AVIATOR_NEXT_ROUND_SECONDS * 1000) {
     await aviatorGlobalCollection.updateOne(
       { _id: "current", roundId: round.roundId, phase: "crashed" },
-      { $set: newAviatorRound(now, Number(round.nonce || 0) + 1) }
+      { $set: newAviatorRound(now, Number(round.nonce || 0) + 1, await aviatorConfigCollection.findOne({ _id: "settings" })) }
     );
   }
 }
