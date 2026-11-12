@@ -1,0 +1,517 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap');
+:root{font-family:'DM Sans',sans-serif;color:#edf0f5;background:#10141d;font-synthesis:none}*{box-sizing:border-box}body{margin:0;background:#10141d}button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}.app{min-height:100vh}.top{height:72px;background:#171d28;border-bottom:1px solid #2b3342;display:flex;align-items:center;padding:0 24px;gap:18px;position:sticky;top:0;z-index:5}.iconbtn{background:none;color:#aeb8c8}.brand{display:flex;align-items:center;gap:10px;font:700 21px Oswald;letter-spacing:1px}.brand b{color:#e8b94d}.brand small{display:block;font:600 9px 'DM Sans';letter-spacing:2px;color:#8290a4}.crest{background:linear-gradient(145deg,#f4d37b,#a87920);color:#111;border-radius:9px;padding:5px 11px;font-size:24px}.topright{margin-left:auto;display:flex;gap:9px;align-items:center}.demoTag{font-size:10px;color:#e9c46b;border:1px solid #8b6a2d;border-radius:30px;padding:6px 9px;letter-spacing:1px}.outline,.gold,.userbtn{padding:9px 15px;border-radius:7px;font-weight:700;font-size:12px}.outline{background:transparent;border:1px solid #4a5669}.gold{background:linear-gradient(110deg,#f1d17d,#c18a2d);color:#17130b}.userbtn{background:#252e3d;display:flex;align-items:center;gap:7px}.notice{background:#292416;color:#e6c76e;text-align:center;padding:8px;font-size:11px;display:flex;justify-content:center;gap:8px}.layout{display:grid;grid-template-columns:220px minmax(400px,1fr) 300px;gap:18px;max-width:1600px;margin:auto;padding:18px}.sidebar,.slip{background:#171d28;border:1px solid #293243;border-radius:10px;height:max-content;position:sticky;top:100px;max-height:calc(100vh - 120px);overflow:auto}.sidebar{padding:14px 10px}.sideTitle{font-size:10px;color:#78869a;font-weight:800;letter-spacing:1.5px;padding:8px 10px}.sideItem,.sportItem{display:flex;width:100%;align-items:center;gap:12px;padding:10px;border-radius:7px;background:none;color:#b6c0cf;text-align:left;font-size:13px}.sideItem.active,.sideItem:hover,.sportItem:hover,.sportItem.chosen{background:#293343;color:#f0c96c}.liveDot{width:7px;height:7px;background:#ee5757;border-radius:50%;margin-left:auto}.sportsTitle{margin-top:15px}.sportItem{padding:8px 10px;font-size:12px}.sportEmoji{width:20px}.content{min-width:0}.hero{background:radial-gradient(circle at 85% 40%,#34445a,#202b3b 40%,#19212e);border:1px solid #344153;border-radius:12px;padding:27px 30px;min-height:190px;display:flex;justify-content:space-between;overflow:hidden;position:relative}.eyebrow{color:#e8c46b;font-size:10px;letter-spacing:2px;display:flex;align-items:center;gap:7px}.hero h1{font:700 36px/1.05 Oswald;margin:13px 0}.hero h1 em{color:#e9c66f;font-style:normal}.hero p{color:#aab5c4;font-size:12px}.heroBall{font-size:100px;align-self:center;opacity:.8;filter:drop-shadow(0 10px 20px #0a0d13)}.filterbar{display:flex;justify-content:space-between;gap:10px;margin:18px 0 12px}.tabs{display:flex;background:#1b2330;border-radius:8px;padding:3px}.tabs button{background:none;padding:8px 12px;color:#9ca8b9;font-size:11px;border-radius:6px}.tabs button.on{background:#344154;color:#f0ce7a}.search{display:flex;align-items:center;gap:7px;background:#1b2330;border:1px solid #2c3749;border-radius:7px;padding:0 10px;color:#8492a5}.search input{background:none;border:0;outline:0;color:white;width:180px;padding:9px 0;font-size:11px}.sportchips{display:flex;gap:7px;overflow:auto;padding:2px 0 13px}.chip{white-space:nowrap;background:#1b2330;border:1px solid #2b3545;border-radius:20px;padding:7px 12px;font-size:10px;color:#aeb8c7}.activeChip{background:#4a3b1f;color:#f1d17d;border-color:#947339}.league{background:#171d28;border:1px solid #293344;border-radius:9px;margin-bottom:13px;overflow:hidden}.leagueHead{display:flex;justify-content:space-between;padding:11px 14px;background:#202938;color:#d5dce6;font-size:11px;font-weight:700}.leagueHead span{display:flex;gap:8px;align-items:center}.leagueHead small{color:#8492a4;font-size:9px}.match{padding:13px 14px;border-top:1px solid #283243;display:grid;grid-template-columns:minmax(150px,1fr) minmax(230px,1.2fr);gap:13px}.matchMeta{display:flex;gap:10px;color:#8290a2;font-size:9px;margin-bottom:9px}.matchMeta span{display:flex;align-items:center;gap:4px}.liveLabel{color:#ff6868}.teams{display:flex;flex-direction:column;gap:5px;font-size:12px}.versus{color:#8996a8;font-size:9px}.market small{display:block;color:#8793a4;font-size:9px;margin-bottom:6px}.market>div{display:flex;gap:5px;flex-wrap:wrap}.odd{background:#263243;border:1px solid #344255;border-radius:5px;min-width:74px;flex:1;display:flex;justify-content:space-between;gap:6px;padding:7px 8px;font-size:9px;color:#c1cad6}.odd b{color:#f0cb6e}.odd:hover,.selectedOdd{border-color:#e2b64e;background:#40371f}.empty{background:#171d28;border:1px dashed #3a4659;border-radius:9px;padding:40px;text-align:center;color:#9ba8b9;font-size:13px}.slip{padding:14px}.slipHead{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2b3545;padding-bottom:12px;font-weight:700;font-size:13px}.slipHead span{display:flex;gap:8px;align-items:center}.slipHead button{background:none;color:#9ba8b9}.slipEmpty{padding:36px 8px;display:flex;align-items:center;flex-direction:column;gap:9px;color:#748196;text-align:center}.slipEmpty b{color:#cbd3df;font-size:12px}.slipEmpty span{font-size:10px;line-height:1.5}.slipItems{max-height:300px;overflow:auto}.slipItem{position:relative;padding:12px 20px 12px 0;border-bottom:1px solid #2b3545}.slipItem button{position:absolute;right:0;top:8px;background:none;color:#9ca8b9}.slipItem b,.slipItem small{display:block}.slipItem b{font-size:11px}.slipItem small{font-size:9px;color:#8290a3;margin:4px 0}.slipItem strong{font-size:11px;color:#edc66e}.slipCalc{padding-top:13px}.slipCalc>div{display:flex;justify-content:space-between;margin:10px 0;font-size:10px;color:#9ba8b9}.slipCalc>div b{color:#eef1f5}.slipCalc label{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#aab5c4}.slipCalc input,.modal input{background:#222c3a;border:1px solid #3a4658;border-radius:6px;padding:9px;color:#fff;width:100px;outline:none}.goldText{color:#eac56b!important}.place{width:100%;margin-top:12px;padding:12px}.fine{display:block;text-align:center;color:#758397;font-size:9px;margin-top:9px}.history{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;background:#171d28;border:1px solid #293344;border-radius:8px;margin:9px 0;font-size:12px}.history small{display:block;color:#8d9aad;font-size:10px;margin-top:5px}.status{font-weight:800;text-transform:uppercase}.status.won{color:#5bd39a}.status.lost{color:#ff7272}.status.pending{color:#eac56b}.status.void{color:#9ba8b9}.sub{color:#8f9daf;font-size:12px}.accountCard{text-align:center;background:#171d28;padding:30px;border-radius:10px;border:1px solid #293344}.avatar{width:55px;height:55px;border-radius:50%;background:#c99b43;color:#151515;display:grid;place-items:center;font-size:24px;font-weight:800;margin:auto}.accountCard p{font-size:11px;color:#8996a8}.balance{font:700 30px Oswald;color:#edc66d;margin:22px}.balance small{display:block;font:9px 'DM Sans';letter-spacing:2px;color:#8996a8}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stats div{background:#1b2330;border:1px solid #2b3545;border-radius:8px;padding:15px}.stats small,.stats b{display:block;text-transform:capitalize}.stats small{color:#8b98aa;font-size:10px}.stats b{font:700 23px Oswald;margin-top:7px}.addBtn{display:flex;align-items:center;gap:6px;margin:16px 0}h2{font:600 25px Oswald}h3{font:600 16px Oswald}footer{border-top:1px solid #283243;padding:20px 30px;color:#758397;font-size:10px;display:flex;justify-content:space-between}.modalShade{position:fixed;inset:0;background:#070a10cc;z-index:10;display:grid;place-items:center;padding:20px}.modal{position:relative;background:#1b2330;border:1px solid #3a4658;border-radius:12px;padding:26px;width:min(420px,100%)}.modal h2{margin-top:0}.modal form{display:grid;gap:10px}.modal input{width:100%}.close{position:absolute;right:15px;top:12px;background:none;font-size:25px;color:#9aa7b8}.switch{text-align:center;font-size:11px;color:#9ba8b9}.switch a{color:#edc66d;cursor:pointer}.modal small{font-size:9px;color:#8390a3}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#e8c46b;color:#16130c;padding:12px 18px;border-radius:7px;font-size:12px;font-weight:700;z-index:20;box-shadow:0 5px 25px #0008;cursor:pointer}
+@media(max-width:1100px){.layout{grid-template-columns:190px minmax(350px,1fr)}.slip{position:static;grid-column:2;max-height:none}.sidebar{grid-row:1/3}.slipEmpty{padding:20px}.slipCalc{max-width:500px}}@media(max-width:720px){.top{height:60px;padding:0 12px}.brand{font-size:17px}.demoTag{display:none}.topright{gap:5px}.outline,.gold,.userbtn{padding:8px 10px}.notice{font-size:9px}.layout{display:flex;flex-direction:column;padding:10px;gap:10px}.sidebar{position:static;max-height:none;display:flex;overflow:auto;gap:4px;padding:7px}.sideTitle,.sportsTitle,.sportItem{display:none}.sideItem{white-space:nowrap;width:auto;padding:9px;font-size:10px}.sideItem svg{width:14px}.hero{min-height:160px;padding:20px}.hero h1{font-size:29px}.heroBall{font-size:65px}.filterbar{flex-direction:column}.search input{width:100%}.match{grid-template-columns:1fr}.marketGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.odd{min-width:0}.slip{position:static}.stats{grid-template-columns:repeat(2,1fr)}footer{padding:15px;gap:10px;flex-direction:column}.history{font-size:10px}}
+
+.aviatorGame{background:#101b2a;border:1px solid #30445a;border-radius:14px;padding:14px;margin:12px 0 24px}.aviatorSky{height:300px;border-radius:10px;background:radial-gradient(ellipse at 50% 85%,#21466a,#10253c 55%,#0a1728);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column}.aviatorSky:before,.aviatorSky:after{content:"";position:absolute;width:160%;height:1px;background:#31516c;transform:rotate(-18deg);top:45%;left:-30%;opacity:.6}.aviatorSky:after{top:70%;transform:rotate(14deg)}.aviatorBadge{position:absolute;top:14px;left:14px;color:#9eb4c9;font-size:10px;letter-spacing:2px}.aviatorPlane{font-size:46px;transform:rotate(-8deg);filter:drop-shadow(0 0 14px #61baff);z-index:1}.aviatorMultiplier{font:700 clamp(42px,8vw,76px) Oswald;color:#fff;text-shadow:0 4px 25px #53baff;z-index:1}.aviatorHint{color:#9fb4c9;font-size:11px;margin-top:8px;z-index:1}.aviatorControls{display:flex;gap:12px;align-items:end;justify-content:center;padding:16px;flex-wrap:wrap}.aviatorControls label{font-size:11px;color:#aebccc;display:grid;gap:6px}.aviatorControls input{width:150px;background:#202c3c;border:1px solid #42546a;border-radius:7px;padding:12px;color:white}.aviatorControls button{min-width:170px;min-height:42px}.aviatorCash{background:linear-gradient(120deg,#39d98a,#159d69);color:#062416;font-weight:900;border-radius:8px;padding:12px 18px}@media(max-width:720px){.aviatorSky{height:240px}.aviatorControls{align-items:stretch}.aviatorControls label,.aviatorControls input,.aviatorControls button{width:100%}}
+
+/* Enhanced Aviator flight scene */
+.aviatorSky{height:360px;background:radial-gradient(ellipse at 58% 88%,#173e57 0%,#10283d 43%,#081421 100%);isolation:isolate}
+.aviatorSky:before,.aviatorSky:after{opacity:.22}
+.aviatorGrid{position:absolute;inset:0;background-image:linear-gradient(#7ca9c31a 1px,transparent 1px),linear-gradient(90deg,#7ca9c31a 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(transparent,#000 25%,#000 90%);z-index:-1}
+.aviatorFlightPath{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.flightLine{stroke-dasharray:1200;stroke-dashoffset:1200;animation:drawFlight 8s linear infinite;filter:drop-shadow(0 0 8px #32d7b0)}
+.aviatorPlane{position:absolute;left:12%;top:72%;font-size:42px;animation:planeFlight 8s ease-in-out infinite;filter:drop-shadow(0 0 12px #66caff);transform-origin:center;z-index:2}
+@keyframes drawFlight{to{stroke-dashoffset:0}}
+@keyframes planeFlight{0%{left:8%;top:76%;transform:rotate(-5deg)}35%{left:38%;top:59%;transform:rotate(-14deg)}70%{left:69%;top:30%;transform:rotate(-20deg)}100%{left:88%;top:5%;transform:rotate(-25deg)}}
+.aviatorMultiplier{font-size:clamp(48px,9vw,86px);text-shadow:0 0 20px #4dbbff,0 4px 30px #000;z-index:3;margin-top:-10px}
+.aviatorHint{z-index:3;background:#06111d99;padding:7px 13px;border-radius:20px}
+.aviatorLiveDot{display:inline-block;width:7px;height:7px;background:#42e59a;border-radius:50%;margin-right:5px;box-shadow:0 0 9px #42e59a}
+.aviatorSkyFooter{position:absolute;bottom:12px;left:15px;right:15px;display:flex;justify-content:space-between;color:#7897aa;font-size:9px;letter-spacing:1px}
+.aviatorSky.crashed{background:radial-gradient(ellipse at center,#6b2525,#251622 65%,#0b111c)}
+.aviatorSky.crashed .aviatorPlane{animation:crashPlane .9s ease-in forwards}
+.aviatorSky.crashed .flightLine{stroke:#f05b62;filter:drop-shadow(0 0 8px #f05b62)}
+@keyframes crashPlane{to{left:80%;top:80%;transform:rotate(80deg) scale(.65);opacity:0}}
+@media(max-width:720px){.aviatorSky{height:280px}.aviatorPlane{font-size:34px}}
+
+/* Shared-round Aviator premium interface */
+.aviatorTitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}.aviatorTitle h2{font:700 30px Oswald;letter-spacing:2px;margin:5px 0}.aviatorWallet{display:flex;align-items:center;gap:9px;background:#182c3b;border:1px solid #2d5365;border-radius:10px;padding:10px 14px;color:#65e2b0;font-weight:800}.aviatorWallet small{display:block;font-size:8px;letter-spacing:1.5px;color:#8ca9b7}.aviatorShell{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:12px;background:linear-gradient(145deg,#101c2a,#14283a);border:1px solid #2a465b;border-radius:15px;padding:12px;box-shadow:0 16px 45px #0005}.aviatorGame{min-width:0}.aviatorSky{height:390px;border:1px solid #24475c}.aviatorSky.crashed .aviatorMultiplier{color:#ff727a;text-shadow:0 0 22px #fa4e5d}.aviatorSky:not(.crashed) .flightLine{animation:drawFlight 7s linear infinite}.aviatorStars{position:absolute;top:22%;left:10%;color:#8eb5d1;opacity:.28;letter-spacing:15px}.aviatorRecent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 4px 2px;color:#8da5b8;font-size:9px;letter-spacing:1px}.aviatorRecent b{padding:6px 10px;border-radius:20px;background:#233547;font-size:10px}.recentWin{color:#5be2a5!important;background:#153b32!important}.recentLoss{color:#ff838b!important;background:#43262e!important}.recentLive{color:#f2cb70!important;background:#45371f!important}.aviatorBetPanel{background:linear-gradient(160deg,#1c2b3a,#152331);border:1px solid #344d60;border-radius:11px;padding:15px;display:flex;flex-direction:column;justify-content:flex-start}.aviatorPanelTabs{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #344656;padding-bottom:13px;margin-bottom:17px}.aviatorPanelTabs b{font:700 15px Oswald;letter-spacing:1px;color:#e5c574}.aviatorPanelTabs span{font-size:9px;color:#7f9aae}.aviatorStakeHead{display:flex;justify-content:space-between;gap:8px;font-size:10px;font-weight:800;color:#d7e1e9}.stakeBalance{font-size:9px;color:#8da6b7;font-weight:500}.aviatorStakeInput{display:flex;gap:6px;margin:9px 0}.aviatorStakeInput button,.aviatorQuickAmounts button{background:#293d4e;border:1px solid #3b5669;border-radius:6px;padding:9px 12px;color:#d5e2ec;font-weight:800}.aviatorStakeInput input{width:100%;min-width:0;background:#0d1b28;border:1px solid #3a586c;border-radius:6px;color:#fff;text-align:center;font-weight:800;font-size:17px}.aviatorQuickAmounts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:3px 0 17px}.aviatorQuickAmounts button{font-size:10px;padding:8px 3px}.aviatorQuickAmounts button.chosen{border-color:#e5bf60;color:#f2d27f;background:#45391f}.aviatorMainAction{width:100%;min-height:55px;border-radius:8px;font-weight:900;font-size:13px;letter-spacing:.6px}.aviatorBet{background:linear-gradient(110deg,#f2d17b,#b9842b);color:#1c1609}.aviatorPanelFoot{display:flex;justify-content:space-between;gap:5px;color:#7891a4;font-size:8px;margin-top:12px}.aviatorRulesNote{font-size:9px;line-height:1.5;color:#7891a4;margin:15px 0 0}.aviatorHistoryHead{display:flex;justify-content:space-between;align-items:center;margin:22px 0 8px}.aviatorHistoryHead h3{letter-spacing:1px}.aviatorHistoryHead span{font-size:9px;color:#8296a9;letter-spacing:1px}
+@media(max-width:900px){.aviatorShell{grid-template-columns:1fr}.aviatorBetPanel{max-width:none}.aviatorSky{height:330px}}
+@media(max-width:600px){.aviatorTitle{align-items:flex-start}.aviatorWallet{padding:8px;font-size:12px}.aviatorSky{height:280px}.aviatorMultiplier{font-size:52px}.aviatorPanelFoot{font-size:7px}.aviatorQuickAmounts button{font-size:9px}}
+
+
+/* ROYAL FLIGHT feature update */
+.aviatorAutoCashout{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:12px 14px;border:1px solid #29483f;border-radius:10px;background:#0b211c}
+.aviatorAutoCashout label{font-size:11px;font-weight:800;letter-spacing:.08em;color:#8bb7a8}
+.aviatorAutoCashout>div{display:flex;align-items:center;gap:6px}
+.aviatorAutoCashout input{width:82px;padding:8px 9px;border:1px solid #42665a;border-radius:7px;background:#102d25;color:#fff;font-weight:800;text-align:right}
+.aviatorAutoCashout span{color:#40d9a2;font-weight:900}
+.aviatorAutoCashout small{flex-basis:100%;margin-top:-5px;color:#78958a;font-size:10px}
+.aviatorLiveGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.aviatorLiveCard{min-width:0;padding:14px;border:1px solid #233c35;border-radius:12px;background:#0c1715}
+.aviatorLiveCard .aviatorHistoryHead{margin:0 0 10px;padding-bottom:10px}
+.aviatorLiveRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #1b302a;font-size:12px}
+.aviatorLiveRow:last-child{border-bottom:0}
+.aviatorLiveRow>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c7d7d0}
+.aviatorLiveRow>b{color:#fff;font-size:11px}
+.aviatorLiveRow em{font-style:normal;font-size:9px;font-weight:900;white-space:nowrap}
+.status.live{color:#43d7a2}
+@media(max-width:680px){.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
+
+
+/* ROYAL FLIGHT full-screen game layout */
+.aviatorShell{display:block;padding:clamp(8px,1.5vw,18px);background:linear-gradient(145deg,#081522,#112a3c);border-radius:18px}
+.aviatorGame{width:100%}
+.aviatorSky{height:clamp(300px,48vw,560px);min-height:300px;border-radius:14px;background:radial-gradient(ellipse at 55% 85%,#1e5272 0%,#102c45 48%,#071625 100%)}
+.aviatorGrid{position:absolute;inset:48% -20% -45%;background-image:linear-gradient(#2e678055 1px,transparent 1px),linear-gradient(90deg,#2e678055 1px,transparent 1px);background-size:42px 42px;transform:perspective(240px) rotateX(58deg);transform-origin:top;opacity:.5}
+.aviatorSky.crashed{animation:skyCrash .48s ease-out 1;background:radial-gradient(ellipse at 60% 90%,#672a37,#251927 58%,#100f1d)}
+.aviatorSky.crashed .aviatorPlane{animation:planeCrash .85s ease-in forwards}
+.aviatorSky.crashed .flightLine{stroke:#ff6574;filter:drop-shadow(0 0 12px #ff334f);animation:none;stroke-dashoffset:0}
+.aviatorSky:not(.crashed) .aviatorPlane{animation:none;transition:left .09s linear,top .09s linear;transform:rotate(-12deg)}
+.aviatorSky:not(.crashed) .flightLine{animation:drawFlight 8s linear infinite}
+.aviatorBetPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.aviatorBetPanel{min-width:0;background:linear-gradient(160deg,#172c3b,#101f2c);border:1px solid #315064}
+.aviatorControlBar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:12px 0 2px;padding:12px;border:1px solid #294458;border-radius:10px;background:#0a1b29}
+.aviatorControlBar label{margin-right:auto;color:#b8cbd8;font-size:11px;font-weight:800;display:flex;align-items:center;gap:8px}
+.aviatorControlBar input{accent-color:#31d69b}
+.aviatorControlBar button{border:1px solid #3a5c70;border-radius:8px;background:#142d3e;color:#d8e9f4;padding:9px 12px;font-size:10px;font-weight:800;cursor:pointer}
+.aviatorLiveGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.aviatorLiveCard{overflow:hidden}
+.aviatorHistoryHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.aviatorHistoryHead h3{font-size:13px}
+.aviatorHistoryHead span{font-size:9px}
+.aviatorSky.crashed .aviatorMultiplier{animation:crashFlash .35s ease-in-out 2}
+@keyframes skyCrash{0%{transform:translateX(0)}20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes planeCrash{0%{transform:rotate(-12deg) scale(1);opacity:1}35%{transform:rotate(35deg) scale(.95)}100%{transform:translate(110px,260px) rotate(115deg) scale(.35);opacity:0}}
+@keyframes crashFlash{0%,100%{opacity:1}50%{opacity:.35;transform:scale(1.08)}}
+@media(max-width:900px){.aviatorLiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.aviatorShell{padding:7px}.aviatorSky{height:340px;min-height:340px}.aviatorBetPanels{grid-template-columns:1fr}.aviatorControlBar{justify-content:stretch}.aviatorControlBar label{flex-basis:100%;margin:0}.aviatorControlBar button{flex:1}.aviatorLiveGrid{grid-template-columns:1fr}.aviatorLiveRow{grid-template-columns:minmax(0,1fr) auto auto}.aviatorAutoCashout{flex-wrap:wrap}.aviatorAutoCashout small{flex-basis:100%}}
+
+.aviatorFairnessCard{background:#151f2d;border:1px solid #3b5a70;border-radius:10px;padding:15px;margin:16px 0;color:#dce7ef}.aviatorFairnessCard p{font-size:11px;line-height:1.6;color:#aab9c8}.aviatorFairnessCard>small,.aviatorFairnessLatest small{display:block;color:#91a6b9;font-size:10px;margin:7px 0}.aviatorFairnessCard code{display:block;overflow-wrap:anywhere;background:#0b1420;border:1px solid #293e51;border-radius:6px;padding:9px;color:#70d9b2;font-size:10px}.aviatorFairnessLatest{display:grid;gap:7px;border-top:1px solid #304456;margin-top:12px;padding-top:12px}.aviatorFairnessLatest button{width:max-content;max-width:100%;font-size:10px}.aviatorFairnessLatest .status{font-size:11px}
+
+/* Smooth frame-synced ROYAL FLIGHT motion */
+.aviatorPlane{will-change:transform;backface-visibility:hidden;transition:none!important;left:8%;top:76%;}
+.aviatorSky:not(.crashed) .flightLine{animation:none!important;will-change:stroke-dashoffset;}
+.aviatorMultiplier{font-variant-numeric:tabular-nums;will-change:contents;}
+
+
+/* ROYAL FLIGHT - Aviator-inspired compact dark game layout */
+.rfTopbar{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#17191d;border:1px solid #292b30;border-radius:12px;margin:4px 0 8px}
+.rfBrand{font:italic 900 22px Oswald,sans-serif;color:#f23c61;letter-spacing:-.5px;line-height:1}.rfBrand b{color:#fff}.rfBrand small{display:block;margin-top:4px;font:700 8px 'DM Sans',sans-serif;letter-spacing:2px;color:#8b9098}
+.rfBalance{margin-left:auto;color:#aeb2b8;font-size:11px;font-weight:800}.rfBalance span{color:#45d34c;font-size:20px}
+.rfRoundTag{padding:7px 10px;border-radius:20px;background:#25282d;color:#aeb7c1;font-size:9px;font-weight:900;letter-spacing:.7px}
+.rfRecentStrip{display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap;padding:9px 3px 11px;scrollbar-width:none}.rfRecentStrip>span{color:#858b93;font-size:9px;font-weight:900;letter-spacing:1px;margin-right:3px}.rfRecentStrip b{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:800}.rfHigh{color:#b78aff;background:#292039}.rfLow{color:#54b9ef;background:#172b3b}
+.aviatorShell{background:#101113!important;border:1px solid #292b30!important;border-radius:16px!important;padding:8px!important;box-shadow:none!important}
+.aviatorGame{background:transparent!important;border:0!important;padding:0!important;margin:0!important}
+.aviatorSky{height:clamp(320px,55vw,560px)!important;min-height:320px;border-radius:14px!important;border:1px solid #292b30!important;background:repeating-conic-gradient(from 235deg at 0% 100%,#17191d 0deg 12deg,#0a0b0d 12deg 24deg)!important;isolation:isolate}
+.aviatorSky:before,.aviatorSky:after{display:none}
+.aviatorSky:after{display:none}
+.aviatorGrid{background:radial-gradient(ellipse at 45% 75%,#1678a855,transparent 52%)!important;transform:none!important;inset:0!important;opacity:1!important}
+.aviatorMultiplier{font:800 clamp(58px,11vw,100px) 'DM Sans',sans-serif!important;text-shadow:0 0 25px #1688c866!important;letter-spacing:-3px}
+.aviatorPlane{color:#f32950!important;font-size:48px!important;filter:drop-shadow(0 0 10px #f32950)!important}
+.flightLine{stroke:#f32950!important;filter:drop-shadow(0 0 8px #f32950)!important}
+.aviatorHint{background:#101113aa!important;color:#b6bdc5!important;font-size:10px!important}
+.aviatorSkyFooter{color:#8b929a!important}
+.aviatorBetPanels{gap:9px!important;margin-top:9px!important}
+.aviatorBetPanel{background:#191b1f!important;border:1px solid #292c31!important;border-radius:14px!important;padding:12px!important}
+.aviatorPanelTabs{border:0!important;margin-bottom:10px!important;padding-bottom:4px!important}
+.aviatorPanelTabs b{color:#d5d8dc!important}
+.aviatorStakeHead{color:#bfc4ca!important}
+.aviatorStakeInput button,.aviatorQuickAmounts button{background:#25282d!important;border-color:#30343a!important;border-radius:22px!important}
+.aviatorStakeInput input{background:#101113!important;border-color:#30343a!important;border-radius:22px!important}
+.aviatorAutoCashout{background:#141c19!important;border-color:#273c32!important}
+.aviatorQuickAmounts button{border-radius:22px!important}
+.aviatorMainAction{min-height:68px!important;border-radius:16px!important;font-size:17px!important}
+.aviatorBet{background:#20b51d!important;color:#fff!important;box-shadow:0 3px 0 #147b14}
+.aviatorCash{background:#e78300!important;color:#fff!important;box-shadow:0 3px 0 #a95800}
+.aviatorControlBar{background:#191b1f!important;border-color:#292c31!important}
+.aviatorLiveCard{background:#191b1f!important;border-color:#292c31!important}
+@media(max-width:640px){.rfTopbar{padding:11px 12px}.rfBrand{font-size:19px}.rfBalance span{font-size:18px}.rfRecentStrip{gap:6px}.aviatorShell{padding:6px!important}.aviatorSky{height:clamp(320px,82vw,430px)!important;min-height:320px}.aviatorBetPanels{grid-template-columns:1fr!important}.aviatorBetPanel{padding:12px!important}.aviatorMainAction{min-height:72px!important;font-size:18px!important}.aviatorControlBar{gap:7px}.aviatorControlBar button{font-size:9px;padding:8px 9px}}
+
+
+/* Compact ROYAL FLIGHT bet panels */
+.aviatorBetPanels{gap:8px!important;margin-top:8px!important}
+.aviatorBetPanel{padding:10px!important;border-radius:12px!important}
+.aviatorPanelTabs{padding-bottom:2px!important;margin-bottom:7px!important}
+.aviatorPanelTabs b{font-size:12px!important}
+.aviatorPanelTabs span{font-size:8px!important}
+.aviatorStakeHead{font-size:9px!important}
+.aviatorStakeInput{gap:5px!important;margin:6px 0!important}
+.aviatorStakeInput button{padding:6px 10px!important;font-size:11px!important}
+.aviatorStakeInput input{height:36px!important;font-size:15px!important}
+.aviatorAutoCashout{margin:7px 0!important;padding:7px 9px!important;gap:7px!important}
+.aviatorAutoCashout label{font-size:9px!important}
+.aviatorAutoCashout input{padding:5px 7px!important;font-size:11px!important}
+.aviatorAutoCashout small{font-size:8px!important;margin-top:-3px!important}
+.aviatorQuickAmounts{gap:4px!important;margin:2px 0 9px!important}
+.aviatorQuickAmounts button{padding:6px 3px!important;font-size:9px!important}
+.aviatorMainAction{min-height:54px!important;font-size:14px!important;border-radius:12px!important}
+.aviatorPanelFoot{margin-top:7px!important;font-size:7px!important}
+@media(max-width:640px){
+ .aviatorBetPanels{gap:7px!important}
+ .aviatorBetPanel{padding:9px!important}
+ .aviatorStakeInput input{height:34px!important}
+ .aviatorAutoCashout{margin:6px 0!important;padding:6px 8px!important}
+ .aviatorQuickAmounts{margin-bottom:8px!important}
+ .aviatorMainAction{min-height:50px!important;font-size:13px!important}
+ .aviatorPanelFoot{margin-top:6px!important}
+}
+
+.rfAutoToggle{display:flex;align-items:center;gap:7px}
+.rfAutoToggle button{min-width:43px;padding:7px 10px;border:1px solid #4a515a;border-radius:18px;background:#292d33;color:#b5bbc2;font-size:10px;font-weight:900;cursor:pointer}
+.rfAutoToggle button.rfAutoOn{background:#174b36;border-color:#2ca96f;color:#62e5a2}
+.rfAutoToggle button.rfAutoOff{background:#34363b;border-color:#4a4d53;color:#e0e2e5}
+.rfAutoToggle input:disabled{opacity:.45}
+
+
+/* Reference-matched Aviator desktop game layout */
+.aviatorMode{background:#08090b!important;min-height:100vh}
+.aviatorMode>.top,.aviatorMode>.notice{display:none!important}
+.aviatorMode>.layout{display:block!important;max-width:none!important;padding:0!important;margin:0!important}
+.aviatorMode .sidebar,.aviatorMode .slip{display:none!important}
+.aviatorMode .content{width:100%;min-width:0;padding:0 4px 18px}
+.aviatorMode .rfTopbar{height:27px;min-height:27px;padding:0 10px;margin:0;background:#08090b;border:0;border-radius:0;gap:12px}
+.aviatorMode .rfBrand{font-size:16px;line-height:1}
+.aviatorMode .rfBrand small,.aviatorMode .rfRoundTag{display:none}
+.aviatorMode .rfBalance{font-size:10px}
+.aviatorMode .rfBalance span{font-size:13px}
+.aviatorMode .rfRecentStrip{height:34px;padding:3px 8px 7px;gap:12px}
+.aviatorMode .rfRecentStrip>span{display:none}
+.aviatorMode .rfRecentStrip b{background:transparent;padding:0;font-size:12px}
+.rfGameLayout{display:grid;grid-template-columns:370px minmax(0,1fr);gap:5px;align-items:stretch}
+.rfBetsSidebar{height:466px;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#17191b;border:1px solid #242629;border-radius:17px;padding:8px}
+.rfBetTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:2px;background:#0e0f11;border-radius:24px}
+.rfBetTabs button{height:27px;border-radius:20px;background:transparent;color:#9ba0a8;font-size:11px}
+.rfBetTabs button.active{background:#303236;color:#f5f5f5}
+.rfBetSummary{padding:10px 8px 7px;position:relative;border-bottom:1px solid #292b2e}
+.rfBetSummary>b{float:right;font-size:17px;color:#f2f2f2}
+.rfBetSummary>small{display:block;color:#a7adb4;font-size:10px;margin-top:2px}
+.rfAvatars{display:inline-block;color:#d4c0aa;font-size:17px;letter-spacing:-5px}
+.rfProgress{height:5px;background:#292c2e;border-radius:8px;margin-top:8px;overflow:hidden}
+.rfProgress i{display:block;height:100%;background:#38ad00}
+.rfBetTableHead,.rfBetRow{display:grid;grid-template-columns:minmax(0,1.2fr) .9fr .55fr .8fr;gap:5px;align-items:center}
+.rfBetTableHead{padding:10px 7px 7px;color:#7d8790;font-size:9px}
+.rfBetRows{overflow:auto;min-height:0;flex:1;scrollbar-width:thin;scrollbar-color:#41454a transparent}
+.rfBetRow{min-height:35px;margin:0 0 4px;padding:5px 7px;border-radius:20px;background:#101214;color:#d4d8dc;font-size:10px}
+.rfBetRow:nth-child(odd){background:#1b3010}
+.rfBetRow span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rfBetRow span:not(:first-child),.rfBetRow b{text-align:right}
+.rfHighText{color:#a36aff}.rfLowText{color:#21aaf2}
+.rfEmpty{padding:35px 8px;text-align:center;color:#858b92;font-size:11px}
+.rfPreviousRow{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #292b2e;color:#b8bec5;font-size:11px}
+.rfFairMini{padding:8px 5px 1px;border-top:1px solid #2a2c2f;color:#aab2bc;font-size:10px}
+.rfGameMain{min-width:0;display:flex;flex-direction:column;gap:5px}
+.aviatorMode .aviatorShell{padding:0!important;margin:0!important;border:0!important;border-radius:16px!important;background:#101113!important}
+.aviatorMode .aviatorGame{padding:0!important;margin:0!important}
+.aviatorMode .aviatorSky{height:246px!important;min-height:246px!important;border-radius:16px!important;background:repeating-conic-gradient(from 235deg at 0% 100%,#17191d 0deg 12deg,#090a0c 12deg 24deg)!important}
+.aviatorMode .aviatorGrid{background:radial-gradient(ellipse at 55% 55%,#59107a88,transparent 55%)!important}
+.aviatorMode .aviatorMultiplier{font-size:clamp(54px,6vw,82px)!important;letter-spacing:-2px!important;text-shadow:0 0 18px #9a35ff66!important}
+.aviatorMode .aviatorPlane{font-size:58px!important;color:#f20a4b!important;filter:drop-shadow(0 0 7px #f20a4b)!important}
+.aviatorMode .aviatorHint{display:none}
+.aviatorMode .aviatorSkyFooter{bottom:8px;font-size:8px}
+.rfPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0}
+.rfPanel{min-width:0;min-height:178px;padding:8px!important;background:#191b1d!important;border:1px solid #25272a!important;border-radius:17px!important;display:flex;flex-direction:column;justify-content:flex-start}
+.rfPanelTabs{display:flex;align-self:center;width:62%;height:29px;margin:0 0 8px;padding:3px;background:#101113;border-radius:20px;gap:3px}
+.rfPanelTabs button{flex:1;background:transparent;color:#aeb3ba;border-radius:18px;font-size:11px}
+.rfPanelTabs button.selected{background:#303236;color:#f6f6f6}
+.rfPanelControls{display:grid;grid-template-columns:minmax(110px,.75fr) minmax(130px,1fr);gap:8px;align-items:stretch;flex:1}
+.rfStakeColumn{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.rfPanel .aviatorStakeInput{display:grid;grid-template-columns:27px minmax(0,1fr) 27px;gap:4px;margin:3px 0 7px}
+.rfPanel .aviatorStakeInput button{height:29px;padding:0!important;border:0!important;background:#292c30!important;color:#b9c0c8!important;font-size:16px!important}
+.rfPanel .aviatorStakeInput input{height:29px!important;min-width:0;padding:0!important;border:0!important;background:transparent!important;font-size:15px!important}
+.rfPanel .aviatorQuickAmounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0}
+.rfPanel .aviatorQuickAmounts button{height:23px;padding:2px!important;border:0!important;background:#111315!important;color:#aeb5bd!important;font-size:10px!important}
+.rfPanel .aviatorMainAction{height:82px;min-height:82px!important;align-self:center;border:1px solid #b7e5a9;border-radius:12px!important;font-size:21px!important;font-weight:500;letter-spacing:0}
+.rfPanel .aviatorMainAction small{font-size:15px;font-weight:400}
+.rfPanel .aviatorBet{background:#20b20c!important;color:#fff!important;box-shadow:none!important}
+.rfPanel .aviatorCash{background:#e78300!important;color:#fff!important;box-shadow:none!important}
+.rfAutoLine{display:none;align-items:center;gap:5px;margin-top:5px;color:#9ca5ae;font-size:9px}
+.rfAutoLine input[type=number]{width:42px;background:#101214;border:1px solid #34383d;border-radius:5px;color:#fff;padding:3px;font-size:9px}
+.rfAutoLine input[type=checkbox]{accent-color:#25b913}
+.rfPanel:has(.rfAutoLine input[type=checkbox]:checked) .rfAutoLine{display:flex}
+.aviatorMode .aviatorControlBar{margin:5px 0 0;padding:8px;background:#17191b;border-color:#292b2e}
+.aviatorMode .aviatorFairnessCard,.aviatorMode .aviatorHistoryHead,.aviatorMode .history{margin-left:8px;margin-right:8px}
+@media(max-width:900px){
+ .rfGameLayout{grid-template-columns:1fr}
+ .rfBetsSidebar{height:250px;order:2}
+ .rfGameMain{order:1}
+ .aviatorMode .aviatorSky{height:clamp(230px,42vw,360px)!important;min-height:230px!important}
+}
+@media(max-width:600px){
+ .aviatorMode .content{padding:0 3px 14px}
+ .rfGameLayout{gap:5px}
+ .aviatorMode .aviatorSky{height:240px!important;min-height:240px!important}
+ .rfPanels{grid-template-columns:1fr 1fr;gap:4px}
+ .rfPanel{padding:6px!important;min-height:160px}
+ .rfPanelTabs{width:90%;height:25px;margin-bottom:5px}
+ .rfPanelControls{grid-template-columns:minmax(0,1fr);gap:4px}
+ .rfPanel .aviatorMainAction{height:48px;min-height:48px!important;font-size:15px!important}
+ .rfPanel .aviatorMainAction small{font-size:11px}
+ .rfPanel .aviatorQuickAmounts button{height:21px}
+ .rfBetsSidebar{height:230px}
+ .rfBetRow{font-size:9px;min-height:31px}
+}
+
+
+/* Reduce Aviator flight screen height */
+.aviatorMode .aviatorSky{
+  height:190px!important;
+  min-height:190px!important;
+}
+.aviatorMode .aviatorMultiplier{
+  font-size:clamp(42px,4.8vw,64px)!important;
+}
+.aviatorMode .aviatorPlane{
+  font-size:46px!important;
+}
+@media(max-width:900px){
+  .aviatorMode .aviatorSky{
+    height:175px!important;
+    min-height:175px!important;
+  }
+}
+@media(max-width:600px){
+  .aviatorMode .aviatorSky{
+    height:165px!important;
+    min-height:165px!important;
+  }
+  .aviatorMode .aviatorMultiplier{
+    font-size:48px!important;
+  }
+}
+
+/* Phase 1: Aviator reference header and full-width game frame */
+.aviatorMode{background:#08090b!important;min-height:100vh;color:#f4f4f4}
+.aviatorMode>.top,.aviatorMode>.notice{display:none!important}
+.aviatorMode>.layout{display:block!important;max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
+.aviatorMode .sidebar,.aviatorMode .slip{display:none!important}
+.aviatorMode .content{width:100%!important;min-width:0!important;padding:0 5px 18px!important;margin:0!important}
+.aviatorMode .rfTopbar{height:48px;min-height:48px;width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#101113;border-bottom:1px solid #292b2e;gap:12px}
+.aviatorMode .rfBrand{display:flex;align-items:center;gap:8px;font:800 17px Oswald,sans-serif;letter-spacing:.5px;color:#f4f4f4}
+.aviatorMode .rfBrand i{font-style:normal;color:#ed174c}
+.aviatorMode .rfLogo{width:27px;height:27px;display:grid;place-items:center;border-radius:7px;background:#ed174c;color:white;font:900 17px Oswald}
+.aviatorMode .rfTopActions{display:flex;align-items:center;gap:10px}
+.aviatorMode .rfBalance{display:flex;flex-direction:column;align-items:flex-end;gap:1px;color:#46d783;font-weight:800;line-height:1.1}
+.aviatorMode .rfBalance small{font-size:8px;letter-spacing:1px;color:#9da3a9}
+.aviatorMode .rfBalance span{font-size:15px}
+.aviatorMode .rfBalance em{font-size:9px;font-style:normal;color:#9da3a9}
+.aviatorMode .rfHeaderIcon{width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#282a2d;color:#e5e7e9;font-size:15px;font-weight:800}
+.aviatorMode .rfHeaderIcon.rfClose{background:#ed174c;color:#fff;font-size:22px;line-height:1}
+.aviatorMode .aviatorTitle{display:none!important}
+@media(max-width:600px){.aviatorMode .rfTopbar{height:43px;min-height:43px;padding:0 8px}.aviatorMode .rfBrand{font-size:14px}.aviatorMode .rfLogo{width:24px;height:24px}.aviatorMode .rfBalance span{font-size:13px}.aviatorMode .rfTopActions{gap:7px}}
+
+
+/* Phase 2: Recent crash multiplier history */
+.aviatorMode .rfCrashHistory{display:flex;align-items:center;gap:10px;min-height:42px;padding:5px 10px;margin:5px 0 7px;background:#111315;border:1px solid #292b2e;border-radius:10px;overflow:hidden}
+.aviatorMode .rfCrashLabel{flex:0 0 auto;color:#9299a1;font-size:9px;font-weight:800;letter-spacing:1px}
+.aviatorMode .rfCrashItems{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.aviatorMode .rfCrashItems::-webkit-scrollbar{display:none}
+.aviatorMode .rfCrashChip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:57px;height:25px;padding:0 9px;border-radius:6px;background:#24272a;font-size:11px;font-weight:800;letter-spacing:.1px}
+.aviatorMode .rfCrashChip.low{color:#23c982;background:#123326}
+.aviatorMode .rfCrashChip.mid{color:#c4a2ff;background:#302044}
+.aviatorMode .rfCrashChip.high{color:#ffcf5b;background:#40331a}
+.aviatorMode .rfCrashEmpty{color:#7e858d;font-size:10px;white-space:nowrap}
+@media(max-width:600px){.aviatorMode .rfCrashHistory{min-height:37px;padding:4px 7px;gap:7px;margin:4px 0 5px}.aviatorMode .rfCrashChip{min-width:51px;height:23px;font-size:10px}}
+
+
+/* Phase 3: Left betting sidebar */
+.aviatorMode .rfGameLayout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:7px;align-items:stretch;min-width:0}
+.aviatorMode .rfBetsSidebar{min-width:0;min-height:0;height:100%;display:flex;flex-direction:column;background:#111315;border:1px solid #292b2e;border-radius:13px;overflow:hidden}
+.aviatorMode .rfSidebarTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:7px;background:#191b1e}
+.aviatorMode .rfSidebarTabs button{height:30px;border-radius:7px;background:transparent;color:#aeb4bc;font-size:11px;font-weight:700}
+.aviatorMode .rfSidebarTabs button.active{background:#303438;color:#fff;box-shadow:inset 0 -2px #ed174c}
+.aviatorMode .rfSidebarStats{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:9px 8px;border-bottom:1px solid #292b2e}
+.aviatorMode .rfSidebarStats>div{display:flex;flex-direction:column;gap:3px;padding:7px;border-radius:8px;background:#1b1e21}
+.aviatorMode .rfSidebarStats small{font-size:8px;letter-spacing:.5px;color:#89919a}
+.aviatorMode .rfSidebarStats b{font-size:16px;color:#f4f5f6}
+.aviatorMode .rfBetTableHead,.aviatorMode .rfBetRow{display:grid;grid-template-columns:minmax(0,1.35fr) .7fr .55fr .7fr;gap:4px;align-items:center}
+.aviatorMode .rfBetTableHead{padding:9px 8px 6px;color:#7d8790;font-size:8px;letter-spacing:.5px}
+.aviatorMode .rfBetRows{overflow:auto;min-height:150px;flex:1;scrollbar-width:thin;scrollbar-color:#41454a transparent}
+.aviatorMode .rfBetRow{min-height:35px;margin:0 5px 4px;padding:5px 6px;border-radius:7px;background:#1a1d20;color:#d4d8dc;font-size:9px}
+.aviatorMode .rfBetRow:nth-child(even){background:#20251d}
+.aviatorMode .rfBetRow span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aviatorMode .rfBetRow span:not(:first-child),.aviatorMode .rfBetRow b{text-align:right}
+.aviatorMode .rfBetRow b{color:#38d58c}
+.aviatorMode .rfPreviousRow{display:flex;justify-content:space-between;gap:8px;padding:10px 8px;border-bottom:1px solid #292b2e;color:#b8bec5;font-size:10px}
+.aviatorMode .rfPreviousRow b{color:#d7b1ff}
+.aviatorMode .rfEmpty{padding:28px 8px;text-align:center;color:#858b92;font-size:10px}
+.aviatorMode .rfSidebarFoot{padding:8px 6px;text-align:center;border-top:1px solid #292b2e;color:#777f88;font-size:8px;letter-spacing:.4px}
+@media(max-width:900px){.aviatorMode .rfGameLayout{grid-template-columns:1fr}.aviatorMode .rfBetsSidebar{height:230px;order:2}.aviatorMode .rfGameLayout>.aviatorShell{order:1}}
+@media(max-width:600px){.aviatorMode .rfGameLayout{gap:5px}.aviatorMode .rfBetsSidebar{height:205px}.aviatorMode .rfBetRow{font-size:9px}}
+
+.aviatorMode .rfTopRound{display:block;margin-top:2px;color:#7f8a94;font-size:7px;letter-spacing:.25px}
+.aviatorMode .rfBetRow:has(.rfTopRound){min-height:43px}
+
+/* Phase 4: Main flight scene visual upgrade */
+.aviatorMode .aviatorSky{height:230px!important;min-height:230px!important;border:1px solid #28232e;border-radius:12px!important;background:radial-gradient(ellipse at 65% 65%,#401052 0%,#21102d 31%,#111116 67%,#090a0d 100%)!important;isolation:isolate;overflow:hidden}
+.aviatorMode .aviatorSky:before{width:150%;height:180%;left:-48%;top:-50%;opacity:.2;background:repeating-conic-gradient(from 245deg at 50% 100%,#a7a7b0 0deg 9deg,transparent 9deg 18deg);transform:none;filter:blur(.3px);pointer-events:none}
+.aviatorMode .aviatorSky:after{display:none}
+.aviatorMode .aviatorGrid{z-index:0;opacity:.16;background-image:radial-gradient(circle at 50% 50%,#a35acb 0,transparent 58%),linear-gradient(115deg,transparent 48%,#ffffff0a 49%,transparent 50%)}
+.aviatorMode .aviatorFlightPath{z-index:1;inset:0;overflow:visible;pointer-events:none}
+.aviatorMode .flightLine{stroke-dasharray:1400;stroke-dashoffset:0;animation:none!important;filter:drop-shadow(0 0 5px #ff174b)!important}
+.aviatorMode .rfFlightArea{opacity:.95}
+.aviatorMode .aviatorPlane{z-index:2;left:8%!important;top:76%!important;font-size:44px!important;color:#ff174b!important;filter:drop-shadow(0 0 8px #ff174b)!important;animation:none!important;transition:none!important;transform-origin:center}
+.aviatorMode .aviatorMultiplier{position:relative;z-index:3;margin-top:-10px;font-size:clamp(52px,6.3vw,84px)!important;line-height:1;color:#fff!important;letter-spacing:-2px;text-shadow:0 0 18px #d44bff66,0 3px 20px #000!important}
+.aviatorMode .aviatorBadge{z-index:4;top:13px;left:14px;color:#b8c4d4;font-size:9px;letter-spacing:2px}
+.aviatorMode .aviatorSkyFooter{z-index:4;bottom:8px;left:13px;right:13px;color:#9ba4b1;font-size:8px}
+.aviatorMode .aviatorSky.crashed{animation:rfSkyCrash .38s ease-out 1}
+.aviatorMode .aviatorSky.crashed .aviatorPlane{animation:rfPlaneCrash .65s ease-in forwards!important}
+@keyframes rfSkyCrash{0%{filter:brightness(1)}35%{filter:brightness(1.8)}100%{filter:brightness(.85)}}
+@keyframes rfPlaneCrash{0%{opacity:1}35%{transform:translate(12px,10px) rotate(18deg) scale(1.05)}100%{opacity:0;transform:translate(70px,95px) rotate(75deg) scale(.35)}}
+@media(max-width:900px){.aviatorMode .aviatorSky{height:210px!important;min-height:210px!important}}
+@media(max-width:600px){.aviatorMode .aviatorSky{height:190px!important;min-height:190px!important}.aviatorMode .aviatorMultiplier{font-size:48px!important}}
+
+/* Phase 4 visual correction: expose the curve and soften the area fill */
+.aviatorMode .rfFlightArea{opacity:.42!important}
+.aviatorMode .rfFlightArea+path{stroke-width:3.5}
+.aviatorMode .flightLine{stroke-dasharray:1400;stroke-dashoffset:0;filter:drop-shadow(0 0 7px #ff174b)!important}
+.aviatorMode .aviatorPlane{left:8%;top:76%;transform:translate(-50%,-50%) rotate(-12deg);will-change:left,top,transform}
+
+/* Phase 4: keep flight trail attached to the plane */
+.aviatorMode .rfFlightArea{opacity:.12!important}
+.aviatorMode .flightLine{stroke-dasharray:1400 1400;stroke-dashoffset:0;filter:drop-shadow(0 0 8px #ff174b)!important}
+.aviatorMode .aviatorPlane{z-index:5;pointer-events:none}
+
+/* Fix: !important positioning must read the live coordinates from JS */
+.aviatorMode .aviatorPlane{left:0!important;top:0!important;will-change:transform;backface-visibility:hidden}
+
+/* Phase 4: crash result overlay */
+.aviatorMode .rfCrashOverlay{position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-42%);display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;padding:10px 24px;border:1px solid #ff315f66;border-radius:12px;background:#170b12dd;box-shadow:0 0 32px #ed174c33;pointer-events:none}
+.aviatorMode .rfCrashOverlay strong{font-size:13px;letter-spacing:2px;color:#ff426c}
+.aviatorMode .rfCrashOverlay b{font-size:clamp(30px,4vw,48px);line-height:1.05;color:#fff;text-shadow:0 0 15px #ff174b77}
+.aviatorMode .rfCrashOverlay small{font-size:8px;letter-spacing:2px;color:#c58b9b}
+.aviatorMode .aviatorSky.crashed .aviatorBadge{color:#ff6685}
+.aviatorMode .aviatorSky.crashed .aviatorLiveDot{background:#ff315f;box-shadow:0 0 9px #ff315f}
+@media(max-width:600px){.aviatorMode .rfCrashOverlay{min-width:125px;padding:8px 16px}}
+
+/* Phase 4: custom aircraft graphic */
+.aviatorMode .rfAircraftSvg{display:block;width:54px;height:54px;overflow:visible;color:#ff174b;filter:drop-shadow(0 0 5px #ff174b) drop-shadow(0 0 13px #ff174b88)}
+.aviatorMode .aviatorPlane{font-size:0!important;line-height:0}
+@media(max-width:600px){.aviatorMode .rfAircraftSvg{width:43px;height:43px}}
+
+
+/* New-round transition: brief purple energy pulse and reset reveal. */
+@keyframes rfNewRoundPulse{0%{filter:brightness(1.65);box-shadow:inset 0 0 0 2px #a855f766,0 0 34px #a855f755}45%{filter:brightness(1.2);box-shadow:inset 0 0 0 1px #a855f744,0 0 20px #a855f733}100%{filter:brightness(1);box-shadow:inset 0 0 0 0 transparent,0 0 0 transparent}}
+@keyframes rfNewRoundBadge{0%{opacity:0;transform:translateY(-7px)}35%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(0)}}
+.aviatorMode .aviatorSky.new-round{animation:rfNewRoundPulse .85s ease-out both!important}
+.aviatorMode .aviatorSky.new-round .aviatorBadge{animation:rfNewRoundBadge .45s ease-out both}
+@media(prefers-reduced-motion:reduce){.aviatorMode .aviatorSky.new-round,.aviatorMode .aviatorSky.new-round .aviatorBadge{animation:none!important}}
+
+
+/* Betting mode tabs */
+.aviatorMode .rfBetModeTabs{display:flex;gap:5px;padding:7px 9px 0;background:#151719;border-bottom:1px solid #292b2e}
+.aviatorMode .rfBetModeTabs button{min-width:72px;height:29px;padding:0 16px;border-radius:7px 7px 0 0;background:#222529;color:#929aa3;font-size:10px;font-weight:900;letter-spacing:.8px}
+.aviatorMode .rfBetModeTabs button.active{background:#26352e;color:#48df91;box-shadow:inset 0 -2px #35d782}
+
+/* Per-panel AUTO mode tab */
+.aviatorMode .rfBetModeTabs button{min-width:64px}
+.aviatorMode .rfPanelAutoToggle{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#1c2923;color:#55df98;font-size:10px;font-weight:800;letter-spacing:.25px;border-bottom:1px solid #294b39;cursor:pointer}
+.aviatorMode .rfPanelAutoToggle input{accent-color:#35d782;width:14px;height:14px}
+
+
+/* ROYAL BET — unified premium sportsbook redesign */
+:root{color-scheme:dark;--rb-bg:#080e18;--rb-panel:#111c2b;--rb-panel2:#162437;--rb-line:#26364a;--rb-muted:#91a2b8;--rb-text:#edf4fb;--rb-green:#19c783;--rb-gold:#f0c66a}
+body{background:radial-gradient(ellipse at 50% -15%,#172b40 0,#0a1320 48%,#080e18 100%);color:var(--rb-text)}
+.app:not(.aviatorMode){background:transparent;min-height:100vh}
+.top{height:68px;padding:0 clamp(14px,2.5vw,36px);background:#0b1421ed;border-bottom:1px solid #24364a;box-shadow:0 8px 28px #0003;backdrop-filter:blur(16px)}
+.brand{font-size:22px;letter-spacing:1.4px}.crest{background:linear-gradient(145deg,#21d994,#087d58);color:#04150f;border-radius:10px;box-shadow:0 5px 18px #13c78333}
+.brand b{color:#23d493}.brand small{color:#8095ac}
+.demoTag{color:#65e6b1;border-color:#23694f;background:#102b25}
+.outline,.userbtn{border:1px solid #30465e;background:#142337;color:#dce8f4;border-radius:8px}
+.gold{background:linear-gradient(120deg,#24d996,#0fa66f);color:#04180f;border-radius:8px;box-shadow:0 5px 16px #11bf7b22}
+.notice{background:#0d2c25;color:#75e6b8;border-top:1px solid #174b3a;border-bottom:1px solid #174b3a;padding:8px 12px;font-size:10px;letter-spacing:.25px}
+.layout{max-width:1760px;grid-template-columns:218px minmax(0,1fr) 310px;gap:15px;padding:17px clamp(10px,1.6vw,24px)}
+.sidebar,.slip{background:linear-gradient(180deg,#111e2e,#0e1927);border:1px solid #26384d;border-radius:13px;box-shadow:0 12px 32px #0002}
+.sidebar{padding:13px 10px;top:91px;max-height:calc(100vh - 105px)}
+.sideTitle{color:#71869e;font-size:9px;letter-spacing:1.8px}
+.sideItem,.sportItem{color:#aebed0;border-radius:8px;transition:background .18s,color .18s,transform .18s}
+.sideItem{font-size:12px;padding:11px 10px}
+.sideItem.active,.sideItem:hover,.sportItem:hover,.sportItem.chosen{background:linear-gradient(90deg,#123e35,#173044);color:#63e6b1;box-shadow:inset 3px 0 #1bd18a}
+.sportItem{font-size:11px;padding:8px 10px}
+.content{min-width:0}
+.hero{min-height:168px;padding:24px 28px;border:1px solid #2b455d;border-radius:15px;background:radial-gradient(ellipse at 84% 50%,#1c6654 0,#16394a 25%,transparent 58%),linear-gradient(115deg,#14273b,#101c2c 70%);box-shadow:0 14px 34px #0002}
+.eyebrow{color:#5be2ae;font-weight:800;font-size:9px;letter-spacing:2.1px}
+.hero h1{font-size:34px;letter-spacing:.2px}.hero h1 em{color:#55e3ac}
+.hero p{color:#a7b8ca;font-size:11px}
+.heroBall{font-size:86px;opacity:.65;filter:drop-shadow(0 8px 20px #16cb8a44)}
+.filterbar{align-items:center;margin:15px 0 11px}
+.tabs{background:#111e2d;border:1px solid #26384d;border-radius:9px;padding:3px}
+.tabs button{padding:9px 14px;color:#91a3b8;font-size:10px}
+.tabs button.on{background:#1c3c3b;color:#63e7b2;box-shadow:inset 0 0 0 1px #28634f}
+.search{background:#101d2b;border:1px solid #2b3e53;border-radius:9px}
+.search:focus-within{border-color:#239d76;box-shadow:0 0 0 3px #19c78318}
+.search input{color:#eef7ff}
+.sportchips{gap:6px;padding-bottom:12px}
+.chip{background:#111e2d;border:1px solid #26384d;color:#9fb0c4;border-radius:8px;padding:8px 11px;font-size:10px}
+.chip:hover,.activeChip{background:#123d34;color:#62e4b1;border-color:#267958}
+.league{background:#101b29;border:1px solid #26394d;border-radius:12px;margin-bottom:12px;box-shadow:0 8px 24px #0002}
+.leagueHead{padding:12px 15px;background:linear-gradient(90deg,#182b3d,#142333);color:#dce9f5;border-bottom:1px solid #2a3e52}
+.leagueHead span{font-size:11px}.leagueHead svg{color:#5eddb0}.leagueHead small{color:#7f95aa;font-size:8px;letter-spacing:1px}
+.match{padding:14px 15px;border-top:1px solid #223449;grid-template-columns:minmax(145px,.9fr) minmax(230px,1.4fr);gap:15px;transition:background .16s}
+.match:hover{background:#142437}
+.matchMeta{color:#8da1b7;font-size:9px;margin-bottom:10px}
+.liveLabel{color:#ff6b79;background:#401e2b;border-radius:4px;padding:3px 6px}
+.teams{gap:6px;font-size:12px;color:#eaf2fa}
+.versus{color:#71869d;font-size:9px}
+.market small{color:#8fa2b8;font-size:9px;font-weight:700;letter-spacing:.25px}
+.market>div{gap:5px}
+.odd{background:#1a2b3e;border:1px solid #30465d;border-radius:7px;min-width:72px;padding:8px 9px;color:#c4d2e0;font-size:9px;transition:.15s}
+.odd b{color:#66e3b3;font-size:10px}
+.odd:hover,.selectedOdd{background:#174638;border-color:#24c889;color:#fff;box-shadow:0 0 0 1px #24c88922}
+.empty{background:#101b29;border:1px dashed #344b62;border-radius:12px;color:#91a4b9}
+.slip{padding:15px;top:91px}
+.slipHead{border-bottom:1px solid #293c51;color:#e9f2fa;padding-bottom:13px}
+.slipHead span svg{color:#5ce1b0}
+.slipEmpty{color:#8094aa}.slipEmpty b{color:#dce8f3}
+.slipItem{border-bottom:1px solid #26384b}
+.slipItem strong,.goldText{color:#61e2b1!important}
+.slipCalc>div{color:#9aadc0}.slipCalc>div b{color:#eaf3fb}
+.slipCalc input,.modal input{background:#0d1927;border:1px solid #30465b;border-radius:8px}
+.place{background:linear-gradient(110deg,#22d894,#0d9f6a);color:#04170f;border-radius:8px;font-weight:900}
+.fine{color:#8296aa}
+.history,.accountCard{background:#111e2d;border:1px solid #293c51;border-radius:12px}
+.status.won{color:#5ce2ae}.status.pending{color:#f1c86b}
+.accountCard{box-shadow:0 12px 30px #0002}.avatar{background:linear-gradient(140deg,#28d99a,#087b58);color:#04170f}
+.balance{color:#5ee1b0}
+.stats div{background:#17273a;border:1px solid #2a3f55;border-radius:10px}
+.stats b{color:#edf6ff}
+.modal{background:#111e2d;border:1px solid #344a60;border-radius:14px;box-shadow:0 24px 80px #0009}
+.modalShade{backdrop-filter:blur(6px)}
+.toast{background:#1ac783;color:#04170f;border-radius:9px}
+footer{border-color:#26394d;color:#7f93a9}
+@media(max-width:1100px){
+ .layout{grid-template-columns:190px minmax(0,1fr);gap:12px}
+ .slip{grid-column:2;position:static}
+}
+@media(max-width:720px){
+ .top{height:58px;padding:0 10px;gap:9px}
+ .brand{font-size:16px;gap:7px}.brand small{font-size:7px}.crest{font-size:19px;padding:4px 8px}
+ .layout{padding:9px;gap:9px}
+ .sidebar{border-radius:10px;background:#101d2b;scrollbar-width:none}
+ .sideItem{padding:8px 10px}
+ .hero{min-height:145px;padding:18px;border-radius:12px}
+ .hero h1{font-size:27px}.hero p{max-width:240px;line-height:1.5}
+ .heroBall{font-size:60px}
+ .filterbar{gap:8px}.tabs{width:100%;justify-content:space-between}.tabs button{flex:1;padding:9px 5px}
+ .search{min-height:38px}.search input{font-size:11px}
+ .sportchips{margin-right:-2px}
+ .league{border-radius:10px}
+ .match{padding:12px;gap:11px}
+ .teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px}
+ .teams b:last-child{text-align:right}
+ .versus{white-space:nowrap}
+ .marketGrid{grid-template-columns:1fr;gap:9px}
+ .odd{min-height:34px}
+ .slip{border-radius:11px}
+}
+@media(prefers-reduced-motion:no-preference){
+ .sideItem,.sportItem,.match,.odd{transition:background .16s ease,border-color .16s ease,color .16s ease}
+}
+
+/* Cricket match details panel */
+.matchDetailsToggle{display:inline-flex;align-items:center;gap:10px;margin-top:12px;padding:7px 10px;border:1px solid #36516a;border-radius:6px;background:#192b3b;color:#8fe0c0;font-size:10px;font-weight:700}
+.matchDetailsToggle span{font-size:14px;line-height:10px}
+.cricketDetails{grid-column:1/-1;padding:14px;background:linear-gradient(135deg,#142638,#172b3a);border:1px solid #31516a;border-radius:8px}
+.cricketDetailsHead{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#eaf2fa;font-size:10px;letter-spacing:1px;margin-bottom:12px}
+.cricketStatus{font-size:9px;padding:4px 7px;border-radius:20px;background:#28384a;color:#c5d2df}
+.cricketStatus.live{background:#47272b;color:#ff9a9a}.cricketStatus.finished{background:#173e34;color:#79e2b6}.cricketStatus.upcoming{background:#3c3522;color:#f0d27f}
+.cricketDetailGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cricketDetailGrid>div{min-width:0;padding:9px;background:#0f1c29;border-radius:6px}
+.cricketDetailGrid small,.cricketDetailGrid b{display:block}
+.cricketDetailGrid small{font-size:8px;letter-spacing:1px;color:#8299ad;margin-bottom:6px}
+.cricketDetailGrid b{font-size:11px;line-height:1.5;color:#e1ebf3;overflow-wrap:anywhere}
+.cricketFullScore b+b{margin-top:4px;color:#9fe5c8}
+.cricketDetails p{font-size:9px;line-height:1.5;color:#8ba0b4;margin:11px 0 0}
+@media(max-width:720px){.cricketDetailGrid{grid-template-columns:1fr}.cricketDetails{padding:11px}}
+
+/* Football competition navigation */
+.footballNav{margin-top:14px;border-top:1px solid #2b3544;padding-top:10px}.footballAll{display:block;width:100%;text-align:left;padding:9px 11px;background:transparent;color:#aeb9c8;border-radius:6px;font-size:12px}.footballAll.active,.footballLeagueButton.active{background:#303b4d;color:#f0ce7a}.footballNavCategory{margin-top:12px}.footballNavLabel{padding:7px 10px;color:#e5c36e;font-size:10px;font-weight:800;letter-spacing:1px}.footballCountry{margin:2px 0}.footballCountryButton{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 10px;background:transparent;color:#d4dce7;text-align:left;font-size:12px;border-radius:6px}.footballCountryButton:hover,.footballLeagueButton:hover{background:#252f3e}.footballCountryButton b{color:#8795a8}.footballLeagueButton{display:flex;justify-content:space-between;align-items:center;width:calc(100% - 10px);margin-left:10px;padding:7px 9px;background:transparent;color:#aeb9c8;text-align:left;font-size:11px;border-radius:5px}.footballLeagueButton small{color:#8492a5;font-size:10px}

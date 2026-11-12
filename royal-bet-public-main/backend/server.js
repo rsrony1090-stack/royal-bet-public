@@ -1,0 +1,1795 @@
+import express from "express";
+import cors from "cors";
+import crypto from "crypto";
+import { MongoClient } from "mongodb";
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error("MONGODB_URI environment variable is missing");
+  process.exit(1);
+}
+
+const client = new MongoClient(MONGODB_URI);
+
+const seed = {
+  users: [
+    {
+      id: "u_demo",
+      name: "Demo Player",
+      email: "player@royalbet.demo",
+      password: "demo12345",
+      points: 10000,
+      role: "user"
+    },
+    {
+      id: "u_admin",
+      name: "ROYAL BET Admin",
+      email: "admin@royalbet.demo",
+      password: "RoyalDemo123!",
+      points: 10000,
+      role: "admin"
+    }
+  ],
+
+  matches: [
+    {
+      id: "m1",
+      sport: "Football",
+      country: "England",
+      league: "Premier League",
+      home: "Arsenal",
+      away: "Chelsea",
+      start: "2026-11-12T20:00:00Z",
+      status: "upcoming",
+      score: "—",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: "Arsenal", odd: 1.85 },
+            { label: "Draw", odd: 3.55 },
+            { label: "Chelsea", odd: 4.1 }
+          ]
+        },
+        {
+          name: "Double Chance",
+          options: [
+            { label: "Arsenal or Draw", odd: 1.25 },
+            { label: "Draw or Chelsea", odd: 1.9 },
+            { label: "Arsenal or Chelsea", odd: 1.3 }
+          ]
+        },
+        {
+          name: "Total Goals",
+          options: [
+            { label: "Over 2.5", odd: 1.9 },
+            { label: "Under 2.5", odd: 1.85 }
+          ]
+        },
+        {
+          name: "Both Teams To Score",
+          options: [
+            { label: "Yes", odd: 1.72 },
+            { label: "No", odd: 2.05 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "m2",
+      sport: "Football",
+      country: "Spain",
+      league: "La Liga",
+      home: "Real Madrid",
+      away: "Sevilla",
+      start: "2026-11-12T21:00:00Z",
+      status: "upcoming",
+      score: "—",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: "Real Madrid", odd: 1.42 },
+            { label: "Draw", odd: 4.4 },
+            { label: "Sevilla", odd: 6.8 }
+          ]
+        },
+        {
+          name: "Total Goals",
+          options: [
+            { label: "Over 2.5", odd: 1.65 },
+            { label: "Under 2.5", odd: 2.2 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "m3",
+      sport: "Cricket",
+      country: "International",
+      league: "T20 Friendly",
+      home: "Bangladesh",
+      away: "Sri Lanka",
+      start: "2026-11-11T14:00:00Z",
+      status: "live",
+      score: "BAN 78/2 (9.4)",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: "Bangladesh", odd: 1.95 },
+            { label: "Sri Lanka", odd: 1.82 }
+          ]
+        },
+        {
+          name: "Next 10 Runs",
+          options: [
+            { label: "Over 9.5", odd: 1.8 },
+            { label: "Under 9.5", odd: 1.9 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "m4",
+      sport: "Basketball",
+      country: "USA",
+      league: "NBA",
+      home: "Boston Celtics",
+      away: "Miami Heat",
+      start: "2026-11-13T00:30:00Z",
+      status: "upcoming",
+      score: "—",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: "Boston Celtics", odd: 1.65 },
+            { label: "Miami Heat", odd: 2.25 }
+          ]
+        },
+        {
+          name: "Total Points",
+          options: [
+            { label: "Over 215.5", odd: 1.9 },
+            { label: "Under 215.5", odd: 1.9 }
+          ]
+        }
+      ]
+    },
+    {
+      id: "m5",
+      sport: "Tennis",
+      country: "ATP",
+      league: "World Tour",
+      home: "Player A",
+      away: "Player B",
+      start: "2026-11-13T11:00:00Z",
+      status: "upcoming",
+      score: "—",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: "Player A", odd: 1.75 },
+            { label: "Player B", odd: 2.05 }
+          ]
+        }
+      ]
+    }
+  ],
+
+  predictions: []
+};
+
+let database;
+let stateCollection;
+let providerTestCollection;
+let aviatorRoundCollection;
+let aviatorGlobalCollection;
+let aviatorCrashHistoryCollection;
+
+async function initializeDatabase() {
+  await client.connect();
+
+  database = client.db("royalbet");
+  stateCollection = database.collection("app_state");
+  providerTestCollection = database.collection("provider_test_imports");
+  aviatorRoundCollection = database.collection("aviator_rounds");
+  aviatorGlobalCollection = database.collection("aviator_global_round");
+  aviatorCrashHistoryCollection = database.collection("aviator_crash_history");
+  await aviatorCrashHistoryCollection.createIndex({ roundId: 1 }, { unique: true });
+  await aviatorRoundCollection.createIndex({ userId: 1, settledAt: -1 });
+  await aviatorGlobalCollection.createIndex({ roundId: 1 });
+  await providerTestCollection.createIndex({ eventId: 1 }, { unique: true });
+
+  await stateCollection.updateOne(
+    { _id: "main" },
+    {
+      $setOnInsert: {
+        ...seed,
+        _id: "main"
+      }
+    },
+    { upsert: true }
+  );
+
+  console.log("MongoDB connected successfully");
+}
+
+async function readDB() {
+  const data = await stateCollection.findOne({ _id: "main" });
+
+  if (!data) {
+    throw new Error("Database state not found");
+  }
+
+  const { _id, ...db } = data;
+  return db;
+}
+
+async function writeDB(db) {
+  await stateCollection.replaceOne(
+    { _id: "main" },
+    { ...db, _id: "main" },
+    { upsert: true }
+  );
+}
+
+function safeUser(user) {
+  const { password, ...rest } = user;
+  return rest;
+}
+
+function tokenFor(id) {
+  return crypto
+    .createHash("sha256")
+    .update(id + ":royal-demo")
+    .digest("hex");
+}
+
+async function auth(req, res, next) {
+  try {
+    const token = (req.headers.authorization || "")
+      .replace(/^Bearer\s+/i, "");
+
+    const db = await readDB();
+
+    const user = db.users.find(
+      u => token && token === tokenFor(u.id)
+    );
+
+    if (!user) {
+      return res.status(401).json({ error: "Please log in" });
+    }
+
+    req.user = user;
+    req.db = db;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function optionalAuth(req, res, next) {
+  try {
+    const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+    const db = await readDB();
+    const user = db.users.find(u => token && token === tokenFor(u.id));
+    if (user) { req.user = user; req.db = db; }
+    next();
+  } catch (error) { next(error); }
+}
+
+function admin(req, res, next) {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      error: "Admin access required"
+    });
+  }
+
+  next();
+}
+
+// HEALTH
+app.get("/api/health", async (req, res) => {
+  try {
+    await stateCollection.findOne({ _id: "main" });
+
+    res.json({
+      status: "success",
+      message: "ROYAL BET demo API connected",
+      database: "connected"
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      message: "Database unavailable"
+    });
+  }
+});
+
+// SPORTS
+app.get("/api/sports", async (req, res, next) => {
+  try {
+    const db = await readDB();
+
+    res.json(
+      [...new Set(db.matches.map(m => m.sport))].sort()
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+// CRICAPI CRICKET MATCH SYNC — refreshes every 60 seconds
+let cricApiMatchSync = { expiresAt: 0, matches: [] };
+async function syncCricApiMatches(db) {
+  if (cricApiMatchSync.expiresAt > Date.now()) return cricApiMatchSync.matches;
+  const apiKey = process.env.CRICAPI_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const base = "https://api.cricapi.com/v1";
+    const [currentResponse, listResponse] = await Promise.all([
+      fetch(`${base}/currentMatches?apikey=${encodeURIComponent(apiKey)}&offset=0`, { signal: AbortSignal.timeout(15000) }),
+      fetch(`${base}/matches?apikey=${encodeURIComponent(apiKey)}&offset=0`, { signal: AbortSignal.timeout(15000) })
+    ]);
+    const [currentPayload, listPayload] = await Promise.all([
+      currentResponse.json().catch(() => ({})),
+      listResponse.json().catch(() => ({}))
+    ]);
+    const current = currentResponse.ok && Array.isArray(currentPayload.data) ? currentPayload.data : [];
+    const listed = listResponse.ok && Array.isArray(listPayload.data) ? listPayload.data : [];
+    const byId = new Map();
+    [...listed, ...current].forEach(match => {
+      const id = match.id || match.unique_id;
+      if (id) byId.set(String(id), match);
+    });
+
+    const now = Date.now();
+    const today = new Date(now).toISOString().slice(0, 10);
+    const imported = [...byId.values()].map(match => {
+      const name = String(match.name || match.title || "");
+      const teams = Array.isArray(match.teams) ? match.teams : [];
+      const splitTeams = name.split(/\s+vs\s+/i);
+      const home = String(teams[0] || splitTeams[0] || "").trim();
+      const away = String(teams[1] || splitTeams[1] || "").trim();
+      const providerStatus = String(match.status || "").trim();
+      const rawDate = match.dateTimeGMT || match.date || "";
+      const start = /^\d{4}-\d{2}-\d{2}$/.test(String(rawDate))
+        ? String(rawDate) + "T12:00:00.000Z"
+        : String(rawDate);
+      const startMs = Date.parse(start);
+      const startDate = String(start).slice(0, 10);
+      const hasValidTeams = home && away &&
+        !/^(tbc|tbd|team\s*[ab]|unknown|)$/i.test(home) &&
+        !/^(tbc|tbd|team\s*[ab]|unknown|)$/i.test(away) &&
+        home.toLowerCase() !== away.toLowerCase();
+      if (!hasValidTeams || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return null;
+
+      const isFinished = /won by|drawn|match tied|abandoned|no result|completed|finished/i.test(providerStatus);
+      const isUpcoming = !isFinished && (
+        /not started|upcoming|scheduled|fixture|match starts at/i.test(providerStatus) ||
+        (startDate > today) ||
+        (Number.isFinite(startMs) && startMs > now + 2 * 60 * 60 * 1000)
+      );
+      const status = isFinished ? "finished" : isUpcoming ? "upcoming" : "live";
+      const scores = Array.isArray(match.score) ? match.score : [];
+      const scoreText = scores.length
+        ? scores.map(item => `${item.inning ? item.inning + ": " : ""}${item.r ?? 0}/${item.w ?? 0} (${item.o ?? 0})`).join(" · ")
+        : (status === "upcoming" ? "—" : providerStatus || "Live");
+      return {
+        id: "cric_" + (match.id || match.unique_id),
+        provider: "CricAPI",
+        providerId: String(match.id || match.unique_id),
+        sport: "Cricket",
+        country: "International",
+        league: match.series || match.matchType?.toUpperCase() || "Cricket",
+        home, away, start, status, score: scoreText,
+        providerStatus,
+        venue: match.venue || "",
+        markets: [{ name: "Match Winner", options: [
+          { label: home, odd: 1.90 },
+          { label: away, odd: 1.90 }
+        ]}]
+      };
+    }).filter(Boolean);
+
+    const validIds = new Set(imported.map(match => match.id));
+    const beforeCount = db.matches.length;
+    db.matches = db.matches.filter(match =>
+      match.provider !== "CricAPI" || validIds.has(match.id)
+    );
+    let changed = db.matches.length !== beforeCount;
+    const existing = new Map(db.matches.map(match => [match.id, match]));
+    for (const match of imported) {
+      const old = existing.get(match.id);
+      if (!old) {
+        db.matches.push(match);
+        changed = true;
+      } else {
+        const updated = { ...old, ...match, markets: old.markets?.length ? old.markets : match.markets };
+        if (JSON.stringify(old) !== JSON.stringify(updated)) {
+          Object.assign(old, updated);
+          changed = true;
+        }
+      }
+    }
+    if (changed) await writeDB(db);
+    cricApiMatchSync = { expiresAt: Date.now() + 60000, matches: imported };
+    return imported;
+  } catch (error) {
+    console.error("CricAPI Cricket sync failed:", error.message);
+    return cricApiMatchSync.matches;
+  }
+}
+
+// SPORTMONKS FOOTBALL FIXTURE SYNC — live, upcoming and finished; cached for 60 seconds
+let sportmonksMatchSync = { expiresAt: 0, matches: [] };
+async function syncSportmonksUpcomingMatches(db) {
+  if (sportmonksMatchSync.expiresAt > Date.now()) return sportmonksMatchSync.matches;
+
+  const apiToken = process.env.SPORTMONKS_API_TOKEN;
+  if (!apiToken) return [];
+
+  try {
+    const today = new Date();
+    const from = new Date(today);
+    from.setUTCDate(from.getUTCDate() - 7);
+    const to = new Date(today);
+    to.setUTCDate(to.getUTCDate() + 30);
+    const startDate = from.toISOString().slice(0, 10);
+    const endDate = to.toISOString().slice(0, 10);
+    const imported = [];
+
+    // Fetch several pages so busy match days are not silently truncated.
+    for (let page = 1; page <= 5; page++) {
+      const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state;scores&per_page=50&page=${page}`;
+      const response = await fetch(endpoint, {
+        headers: { Authorization: apiToken, Accept: "application/json" },
+        signal: AbortSignal.timeout(20000)
+      });
+      if (!response.ok) {
+        console.error("Sportmonks fixture sync HTTP", response.status, await response.text().catch(() => ""));
+        break;
+      }
+
+      const payload = await response.json();
+      const fixtures = Array.isArray(payload.data) ? payload.data : [];
+      for (const f of fixtures) {
+        if (!f.starting_at) continue;
+        const participants = f.participants || [];
+        const home = participants.find(p => p.meta?.location === "home");
+        const away = participants.find(p => p.meta?.location === "away");
+        if (!home || !away) continue;
+
+        const rawStart = String(f.starting_at).replace(" ", "T");
+        const start = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(rawStart) ? rawStart : rawStart + "Z";
+        const stateName = [f.state?.developer_name, f.state?.name]
+          .filter(Boolean).join(" ").toLowerCase();
+        const startTime = Date.parse(start);
+        const isFinished = /finished|full[ _-]?time|\\bft\\b|after extra time|after penalties|cancelled|canceled|abandoned|walkover/.test(stateName);
+        const isUpcoming = !isFinished && (
+          /not started|scheduled|\\bns\\b|\\bnt\\b|fixture|postponed|delayed/.test(stateName) ||
+          (Number.isFinite(startTime) && startTime > Date.now())
+        );
+        const status = isFinished ? "finished" : isUpcoming ? "upcoming" : "live";
+
+        const scores = Array.isArray(f.scores) ? f.scores : [];
+        const currentScores = scores.filter(x => /current|2nd half|fulltime|full time/i.test(String(x.description || "")));
+        const scoreRows = currentScores.length ? currentScores : scores;
+        const scoreByParticipant = new Map();
+        for (const row of scoreRows) {
+          const participantId = row.participant_id;
+          const goals = row.score?.goals ?? row.score?.score ?? row.goals;
+          if (participantId != null && goals != null) scoreByParticipant.set(String(participantId), Number(goals));
+        }
+        const homeScore = scoreByParticipant.get(String(home.id));
+        const awayScore = scoreByParticipant.get(String(away.id));
+        const score = homeScore != null && awayScore != null
+          ? `${homeScore} - ${awayScore}`
+          : status === "upcoming" ? "—" : "Score unavailable";
+
+        imported.push({
+          id: "sm_" + f.id,
+          provider: "Sportmonks",
+          providerId: f.id,
+          sport: "Football",
+          country: f.league?.country?.name || "International",
+          league: f.league?.name || "Football",
+          home: home.name,
+          away: away.name,
+          start,
+          status,
+          score,
+          providerStatus: f.state?.name || f.state?.developer_name || status,
+          markets: [
+            { name: "Match Winner", options: [
+              { label: home.name, odd: 1.85 },
+              { label: "Draw", odd: 3.40 },
+              { label: away.name, odd: 4.10 }
+            ]},
+            { name: "Total Goals", options: [
+              { label: "Over 2.5", odd: 1.90 },
+              { label: "Under 2.5", odd: 1.90 }
+            ]}
+          ]
+        });
+      }
+
+      const pagination = payload.pagination || {};
+      if (!fixtures.length || (!pagination.has_more && !pagination.next_page)) break;
+    }
+
+    // Update existing provider fixtures as scores and states change; preserve manual/demo matches.
+    const existing = new Map(db.matches.map(m => [m.id, m]));
+    let changed = false;
+    for (const match of imported) {
+      const old = existing.get(match.id);
+      if (!old) {
+        db.matches.push(match);
+        existing.set(match.id, match);
+        changed = true;
+      } else {
+        const updated = { ...old, ...match, markets: old.markets?.length ? old.markets : match.markets };
+        if (JSON.stringify(old) !== JSON.stringify(updated)) {
+          Object.assign(old, updated);
+          changed = true;
+        }
+      }
+    }
+    if (changed) await writeDB(db);
+
+    sportmonksMatchSync = { expiresAt: Date.now() + 60000, matches: imported };
+    console.log("Sportmonks football sync:", imported.length, "fixtures");
+    return imported;
+  } catch (error) {
+    console.error("Sportmonks football sync failed:", error.message);
+    return sportmonksMatchSync.matches;
+  }
+}
+
+// MATCHES
+app.get("/api/matches", async (req, res, next) => {
+  try {
+    const db = await readDB();
+    await syncSportmonksUpcomingMatches(db);
+    await syncCricApiMatches(db);
+
+    let rows = db.matches;
+
+    if (req.query.sport && req.query.sport !== "All") {
+      rows = rows.filter(m => m.sport === req.query.sport);
+    }
+
+    if (req.query.status && req.query.status !== "all") {
+      rows = rows.filter(m => m.status === req.query.status);
+    }
+
+    if (req.query.q) {
+      const q = String(req.query.q).toLowerCase();
+      rows = rows.filter(m =>
+        [m.home, m.away, m.league, m.country]
+          .some(x => String(x).toLowerCase().includes(q))
+      );
+    }
+
+    rows.sort((a, b) => new Date(a.start) - new Date(b.start));
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// REGISTER
+app.post("/api/register", async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body || {};
+
+    if (
+      !name ||
+      !email ||
+      !password ||
+      String(password).length < 8
+    ) {
+      return res.status(400).json({
+        error: "Name, email and password (8+ characters) required"
+      });
+    }
+
+    const db = await readDB();
+
+    if (
+      db.users.some(
+        u => u.email.toLowerCase() === String(email).toLowerCase()
+      )
+    ) {
+      return res.status(409).json({
+        error: "Email already registered"
+      });
+    }
+
+    const user = {
+      id: "u_" + crypto.randomUUID(),
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      password: String(password),
+      points: 10000,
+      role: "user"
+    };
+
+    db.users.push(user);
+
+    await writeDB(db);
+
+    res.json({
+      token: tokenFor(user.id),
+      user: safeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// LOGIN
+app.post("/api/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body || {};
+
+    const db = await readDB();
+
+    const user = db.users.find(
+      u =>
+        u.email.toLowerCase() === String(email || "").toLowerCase() &&
+        u.password === password
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        error: "Invalid email or password"
+      });
+    }
+
+    res.json({
+      token: tokenFor(user.id),
+      user: safeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// CURRENT USER
+app.get("/api/me", auth, (req, res) => {
+  res.json(safeUser(req.user));
+});
+
+// PREDICTION HISTORY
+app.get("/api/predictions", auth, (req, res) => {
+  res.json(
+    req.db.predictions
+      .filter(p => p.userId === req.user.id)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  );
+});
+
+// CREATE PREDICTION
+app.post("/api/predictions", auth, async (req, res, next) => {
+  try {
+    const { selections, points } = req.body || {};
+
+    if (
+      !Array.isArray(selections) ||
+      !selections.length ||
+      selections.length > 10
+    ) {
+      return res.status(400).json({
+        error: "Select 1–10 outcomes"
+      });
+    }
+
+    const stake = Number(points);
+
+    if (
+      !Number.isInteger(stake) ||
+      stake < 10 ||
+      stake > 10000
+    ) {
+      return res.status(400).json({
+        error: "Points must be 10–10000"
+      });
+    }
+
+    const db = await readDB();
+
+    const user = db.users.find(
+      u => u.id === req.user.id
+    );
+
+    if (!user || user.points < stake) {
+      return res.status(400).json({
+        error: "Not enough demo points"
+      });
+    }
+
+    let combined = 1;
+
+    for (const selection of selections) {
+      const match = db.matches.find(
+        m => m.id === selection.matchId
+      );
+
+      const market = match?.markets.find(
+        x => x.name === selection.market
+      );
+
+      const option = market?.options.find(
+        x => x.label === selection.label
+      );
+
+      if (!option) {
+        return res.status(400).json({
+          error: "Invalid or outdated selection"
+        });
+      }
+
+      if (match.status === "finished") {
+        return res.status(400).json({
+          error: "Match already settled"
+        });
+      }
+
+      combined *= Number(option.odd);
+    }
+
+    user.points -= stake;
+
+    const prediction = {
+      id: "p_" + crypto.randomUUID(),
+      userId: user.id,
+      selections,
+      points: stake,
+      combinedOdds: Number(combined.toFixed(2)),
+      possiblePoints: Math.floor(stake * combined),
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+
+    db.predictions.push(prediction);
+
+    await writeDB(db);
+
+    res.json({
+      prediction,
+      user: safeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// LEADERBOARD
+app.get("/api/leaderboard", async (req, res, next) => {
+  try {
+    const db = await readDB();
+
+    res.json(
+      db.users
+        .filter(u => u.role === "user")
+        .map(safeUser)
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 20)
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ADMIN OVERVIEW
+app.get("/api/admin/overview", auth, admin, (req, res) => {
+  res.json({
+    users: req.db.users.length,
+    matches: req.db.matches.length,
+    predictions: req.db.predictions.length,
+    pending: req.db.predictions.filter(
+      p => p.status === "pending"
+    ).length
+  });
+});
+
+// ADMIN ADD MATCH
+app.post("/api/admin/matches", auth, admin, async (req, res, next) => {
+  try {
+    const {
+      sport,
+      country,
+      league,
+      home,
+      away,
+      start
+    } = req.body || {};
+
+    if (![sport, country, league, home, away, start].every(Boolean)) {
+      return res.status(400).json({
+        error: "All match fields are required"
+      });
+    }
+
+    const db = await readDB();
+
+    const match = {
+      id: "m_" + crypto.randomUUID(),
+      sport,
+      country,
+      league,
+      home,
+      away,
+      start,
+      status: "upcoming",
+      score: "—",
+      markets: [
+        {
+          name: "Match Winner",
+          options: [
+            { label: home, odd: 1.8 },
+            { label: "Draw", odd: 3.4 },
+            { label: away, odd: 4.2 }
+          ]
+        },
+        {
+          name: "Total Goals",
+          options: [
+            { label: "Over 2.5", odd: 1.9 },
+            { label: "Under 2.5", odd: 1.9 }
+          ]
+        }
+      ]
+    };
+
+    db.matches.push(match);
+
+    await writeDB(db);
+
+    res.json(match);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ADMIN SETTLE MATCH
+app.post("/api/admin/settle/:id", auth, admin, async (req, res, next) => {
+  try {
+    const { result, score } = req.body || {};
+
+    if (!["home", "draw", "away", "void"].includes(result)) {
+      return res.status(400).json({
+        error: "Result must be home, draw, away or void"
+      });
+    }
+
+    const db = await readDB();
+
+    const match = db.matches.find(
+      m => m.id === req.params.id
+    );
+
+    if (!match) {
+      return res.status(404).json({
+        error: "Match not found"
+      });
+    }
+
+    match.status = "finished";
+    match.score = score || "Final";
+
+    for (const prediction of db.predictions.filter(
+      p =>
+        p.status === "pending" &&
+        p.selections.some(s => s.matchId === match.id)
+    )) {
+      const impacted = prediction.selections.filter(
+        s => s.matchId === match.id
+      );
+
+      const user = db.users.find(
+        u => u.id === prediction.userId
+      );
+
+      if (result === "void") {
+        prediction.status = "void";
+
+        if (user) {
+          user.points += prediction.points;
+        }
+
+        continue;
+      }
+
+      const winner =
+        result === "home"
+          ? match.home
+          : result === "away"
+            ? match.away
+            : "Draw";
+
+      const won = impacted.every(
+        s =>
+          s.market === "Match Winner" &&
+          s.label === winner
+      );
+
+      if (!won) {
+        prediction.status = "lost";
+      } else if (
+        prediction.selections.every(
+          s => s.matchId === match.id
+        )
+      ) {
+        prediction.status = "won";
+
+        if (user) {
+          user.points += prediction.possiblePoints;
+        }
+      }
+    }
+
+    await writeDB(db);
+
+    res.json({
+      ok: true,
+      match
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
+// SHARED AVIATOR DEMO — one global round for every player
+const AVIATOR_GROWTH_RATE = 0.13;
+const AVIATOR_BET_SECONDS = 5;
+const AVIATOR_NEXT_ROUND_SECONDS = 5;
+
+function aviatorMultiplierAt(startedAt, now = Date.now()) {
+  return Number(Math.exp(Math.max(0, now - new Date(startedAt).getTime()) / 1000 * AVIATOR_GROWTH_RATE).toFixed(2));
+}
+function deriveAviatorCrash(serverSeed, clientSeed, nonce, algorithm = "ROYAL-FLIGHT-PF-3") {
+  const digest = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}`).digest("hex");
+  // Use 52 uniform bits. The 99/(1-u) curve includes the 1% instant-crash
+  // probability naturally and targets 99% theoretical gross RTP before cap/rounding.
+  const fraction = parseInt(digest.slice(0, 13), 16) / 0x10000000000000;
+  const curveBase = algorithm === "ROYAL-FLIGHT-PF-2" ? 100 : 99;
+  const crashAt = Math.min(500, Math.max(1, Math.floor(curveBase / (1 - fraction)) / 100));
+  return { digest, crashAt: Number(crashAt.toFixed(2)) };
+}
+function verifyAviatorRecord(record) {
+  if (!record?.serverSeed || !record?.serverSeedHash || !record?.clientSeed || record?.nonce == null) return { verified: false, error: "Verification data is incomplete." };
+  const calculatedHash = crypto.createHash("sha256").update(record.serverSeed).digest("hex");
+  const derived = deriveAviatorCrash(record.serverSeed, record.clientSeed, record.nonce, record.algorithm || "ROYAL-FLIGHT-PF-1");
+  const commitmentValid = calculatedHash === record.serverSeedHash;
+  const resultMatches = derived.crashAt === Number(record.finalMultiplier);
+  return { verified: commitmentValid && resultMatches, commitmentValid, resultMatches, calculatedHash, calculatedCrashAt: derived.crashAt, recordedCrashAt: Number(record.finalMultiplier), digest: derived.digest, algorithm: "HMAC-SHA256(serverSeed, clientSeed:nonce), first 52 bits, 99/(1-u) crash curve, 99% theoretical gross RTP before cap and rounding, 500x cap" };
+}
+function newAviatorRound(now = Date.now(), nonce = 1) {
+  const serverSeed = crypto.randomBytes(32).toString("hex");
+  const clientSeed = "royal-flight-shared-demo";
+  const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
+  const crashAt = deriveAviatorCrash(serverSeed, clientSeed, nonce).crashAt;
+  const createdAt = new Date(now).toISOString();
+  return {
+    roundId: "av_" + crypto.randomUUID(),
+    phase: "betting",
+    createdAt,
+    bettingEndsAt: new Date(now + AVIATOR_BET_SECONDS * 1000).toISOString(),
+    flightStartedAt: null,
+    serverSeed, serverSeedHash, clientSeed, nonce,
+    algorithm: "ROYAL-FLIGHT-PF-3",
+    crashAt,
+    crashAtSeconds: Math.log(crashAt) / AVIATOR_GROWTH_RATE,
+    bets: []
+  };
+}
+async function saveAviatorHistory(round, bet, status, multiplier, payout = 0) {
+  await aviatorRoundCollection.updateOne(
+    { _id: bet.betId || (round.roundId + "_" + bet.userId) },
+    { $setOnInsert: {
+      _id: bet.betId || (round.roundId + "_" + bet.userId),
+      roundId: round.roundId,
+      userId: bet.userId,
+      stake: bet.stake,
+      status,
+      finalMultiplier: multiplier,
+      payout,
+      panel: bet.panel || 1,
+      betId: bet.betId || null,
+      autoCashedOut: !!bet.autoCashedOut,
+      autoCashoutAt: bet.autoCashoutAt || null,
+      createdAt: round.createdAt,
+      settledAt: new Date().toISOString()
+    } },
+    { upsert: true }
+  );
+}
+async function tickAviatorRound() {
+  const now = Date.now();
+  let round = await aviatorGlobalCollection.findOne({ _id: "current" });
+  if (!round) {
+    const initial = { _id: "current", ...newAviatorRound(now) };
+    await aviatorGlobalCollection.updateOne({ _id: "current" }, { $setOnInsert: initial }, { upsert: true });
+    return;
+  }
+  if (round.phase === "betting" && now >= new Date(round.bettingEndsAt).getTime()) {
+    await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "betting" },
+      { $set: { phase: "flying", flightStartedAt: new Date(now).toISOString() } }
+    );
+    round = await aviatorGlobalCollection.findOne({ _id: "current" });
+  }
+  if (round?.phase === "flying") {
+    const elapsed = (now - new Date(round.flightStartedAt).getTime()) / 1000;
+    const currentMultiplier = aviatorMultiplierAt(round.flightStartedAt, now);
+    if (elapsed < round.crashAtSeconds) {
+      for (const bet of (round.bets || [])) {
+        const target = Number(bet.autoCashoutAt || 0);
+        if (bet.status !== "active" || !target || currentMultiplier < target || target >= round.crashAt) continue;
+        const payout = Math.floor(bet.stake * target);
+        const session = client.startSession();
+        let settled = false;
+        try {
+          await session.withTransaction(async () => {
+            const won = await aviatorGlobalCollection.updateOne(
+              { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
+              { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": target, "bets.$.cashedOutAt": new Date(now).toISOString(), "bets.$.autoCashedOut": true } },
+              { session }
+            );
+            if (!won.modifiedCount) return;
+            const credited = await stateCollection.updateOne(
+              { _id: "main", users: { $elemMatch: { id: bet.userId } } },
+              { $inc: { "users.$.points": payout } },
+              { session }
+            );
+            if (!credited.modifiedCount) throw new Error("Auto cashout balance credit failed");
+            settled = true;
+          });
+        } finally {
+          await session.endSession();
+        }
+        if (settled) await saveAviatorHistory(round, { ...bet, autoCashedOut: true }, "won", target, payout);
+      }
+    }
+    if (elapsed >= round.crashAtSeconds) {
+      const crashed = await aviatorGlobalCollection.updateOne(
+        { _id: "current", roundId: round.roundId, phase: "flying" },
+        { $set: { phase: "crashed", finishedAt: new Date(now).toISOString(), finalMultiplier: round.crashAt } }
+      );
+      if (crashed.modifiedCount) {
+        await aviatorCrashHistoryCollection.updateOne(
+          { roundId: round.roundId },
+          { $setOnInsert: { roundId: round.roundId, finalMultiplier: round.crashAt, crashedAt: new Date(now).toISOString(), createdAt: round.createdAt, serverSeed: round.serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: round.clientSeed, nonce: round.nonce, algorithm: round.algorithm } },
+          { upsert: true }
+        );
+        for (const bet of (round.bets || [])) {
+          if (bet.status === "active") await saveAviatorHistory(round, bet, "lost", round.crashAt, 0);
+        }
+      }
+      round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    }
+  }
+  if (round?.phase === "crashed" && now - new Date(round.finishedAt).getTime() >= AVIATOR_NEXT_ROUND_SECONDS * 1000) {
+    await aviatorGlobalCollection.updateOne(
+      { _id: "current", roundId: round.roundId, phase: "crashed" },
+      { $set: newAviatorRound(now, Number(round.nonce || 0) + 1) }
+    );
+  }
+}
+app.get("/api/aviator/state", optionalAuth, async (req, res, next) => {
+  try {
+    await tickAviatorRound();
+    const round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    const viewerId = req.user?.id || null;
+    const ownBet = viewerId ? ((round.bets || []).find(b => b.userId === viewerId) || null) : null;
+    const history = viewerId ? await aviatorRoundCollection.find({ userId: viewerId }).sort({ settledAt: -1 }).toArray() : [];
+    const crashHistory = await aviatorCrashHistoryCollection.find({}).sort({ crashedAt: -1 }).limit(15).toArray();
+    const topWins = await aviatorRoundCollection.find({ status: "won", payout: { $gt: 0 } }).sort({ payout: -1, settledAt: -1 }).limit(10).toArray();
+    const now = Date.now();
+    res.json({
+      round: {
+        id: round.roundId,
+        phase: round.phase,
+        bettingEndsAt: round.bettingEndsAt,
+        flightStartedAt: round.flightStartedAt,
+        countdownMs: round.phase === "betting" ? Math.max(0, new Date(round.bettingEndsAt).getTime() - now) : 0,
+        multiplier: round.phase === "flying" ? aviatorMultiplierAt(round.flightStartedAt, now) : (round.finalMultiplier || 1),
+        finalMultiplier: round.finalMultiplier || null,
+        serverSeedHash: round.serverSeedHash || null,
+        serverSeed: round.phase === "crashed" ? (round.serverSeed || null) : null,
+        clientSeed: round.clientSeed || null,
+        nonce: round.nonce ?? null,
+        algorithm: round.algorithm || "legacy-unverified",
+        players: new Set((round.bets || []).map(b => b.userId)).size
+      },
+      ownBet: ownBet ? { ...ownBet } : null,
+      ownBets: viewerId ? (round.bets || []).filter(b => b.userId === viewerId).map(b => ({ ...b, panel: b.panel || 1 })) : [],
+      livePlayers: [...new Map((round.bets || []).map(b => [b.userId, { player: "Player #" + String(b.userId).slice(-4), bets: (round.bets || []).filter(x => x.userId === b.userId).length }])).values()],
+      liveBets: (round.bets || []).map(b => ({ player: "Player #" + String(b.userId).slice(-4), panel: b.panel || 1, stake: b.stake, status: b.status, payout: b.payout || 0, finalMultiplier: b.finalMultiplier || null })).slice(0, 30),
+      topWins: topWins.map(b => ({ player: "Player #" + String(b.userId).slice(-4), roundId: b.roundId, stake: b.stake, payout: b.payout || 0, multiplier: b.finalMultiplier || 0, settledAt: b.settledAt, autoCashedOut: !!b.autoCashedOut })),
+      crashHistory,
+      history
+    });
+  } catch (error) { next(error); }
+});
+app.get("/api/aviator/verify/:roundId", auth, async (req, res, next) => {
+  try {
+    const record = await aviatorCrashHistoryCollection.findOne({ roundId: String(req.params.roundId) });
+    if (!record) return res.status(404).json({ verified: false, error: "Completed round verification record not found." });
+    res.json({ roundId: record.roundId, ...verifyAviatorRecord(record) });
+  } catch (error) { next(error); }
+});
+app.post("/api/aviator/start", auth, async (req, res, next) => {
+  const session = client.startSession();
+  try {
+    await tickAviatorRound();
+    const stake = Number(req.body?.stake);
+    const autoCashoutAt = req.body?.autoCashoutAt == null || req.body?.autoCashoutAt === "" ? null : Number(req.body.autoCashoutAt);
+    if (autoCashoutAt !== null && (!Number.isFinite(autoCashoutAt) || autoCashoutAt < 1.1 || autoCashoutAt > 1000)) {
+      return res.status(400).json({ error: "Auto cashout must be between 1.10x and 1000x" });
+    }
+    if (!Number.isInteger(stake) || stake < 10 || stake > 10000) {
+      return res.status(400).json({ error: "Bet must be 10–10000 demo points" });
+    }
+
+    const round = await aviatorGlobalCollection.findOne({ _id: "current" });
+    if (round?.algorithm === "ROYAL-FLIGHT-PF-3" || round?.algorithm === "ROYAL-FLIGHT-PF-2" || round?.algorithm === "ROYAL-FLIGHT-PF-1") {
+      const committedHash = crypto.createHash("sha256").update(String(round.serverSeed || "")).digest("hex");
+      const committedCrash = deriveAviatorCrash(round.serverSeed, round.clientSeed, round.nonce, round.algorithm).crashAt;
+      if (committedHash !== round.serverSeedHash || committedCrash !== Number(round.crashAt)) {
+        return res.status(503).json({ error: "Fairness commitment check failed. This round is paused." });
+      }
+    }
+    if (!round || round.phase !== "betting" || new Date(round.bettingEndsAt).getTime() <= Date.now()) {
+      return res.status(409).json({ error: "Betting is closed. Wait for the next round." });
+    }
+
+    const panel = Number(req.body?.panel || 1);
+    if (![1, 2].includes(panel)) return res.status(400).json({ error: "Choose bet panel 1 or 2." });
+    if ((round.bets || []).some(b => b.userId === req.user.id && (b.panel || 1) === panel)) {
+      return res.status(409).json({ error: "This bet panel is already used in this round." });
+    }
+
+    const bet = {
+      betId: crypto.randomUUID(),
+      panel,
+      userId: req.user.id,
+      stake,
+      status: "active",
+      autoCashoutAt,
+      placedAt: new Date().toISOString()
+    };
+
+    let updatedUser = null;
+    await session.withTransaction(async () => {
+      // Deduct points atomically only if the user still has enough balance.
+      const debit = await stateCollection.updateOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id, points: { $gte: stake } } } },
+        { $inc: { "users.$.points": -stake } },
+        { session }
+      );
+      if (!debit.modifiedCount) {
+        const error = new Error("Not enough demo points");
+        error.status = 400;
+        throw error;
+      }
+
+      // Add the bet only while this exact round is still open and this panel is unused.
+      const placed = await aviatorGlobalCollection.updateOne(
+        {
+          _id: "current",
+          roundId: round.roundId,
+          phase: "betting",
+          bettingEndsAt: { $gt: new Date().toISOString() },
+          bets: { $not: { $elemMatch: { userId: req.user.id, panel } } }
+        },
+        { $push: { bets: bet } },
+        { session }
+      );
+      if (!placed.modifiedCount) {
+        const error = new Error("Betting just closed or this panel was already used.");
+        error.status = 409;
+        throw error;
+      }
+
+      const state = await stateCollection.findOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { session, projection: { users: 1 } }
+      );
+      updatedUser = state?.users?.find(u => u.id === req.user.id) || null;
+    });
+
+    if (!updatedUser) throw new Error("Bet placed but user balance could not be read.");
+    res.json({ ok: true, roundId: round.roundId, bet, user: safeUser(updatedUser) });
+  } catch (error) {
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+app.post("/api/aviator/cashout", auth, async (req, res, next) => {
+  const session = client.startSession();
+  try {
+    const round = await aviatorGlobalCollection.findOne({ _id: "current", roundId: String(req.body?.roundId || "") });
+    if (!round || round.phase !== "flying") return res.status(409).json({ error: "The flight has ended or is not running." });
+    const bet = (round.bets || []).find(b => b.userId === req.user.id && b.status === "active" && (req.body?.betId ? b.betId === req.body.betId : (b.panel || 1) === Number(req.body?.panel || 1)));
+    if (!bet) return res.status(404).json({ error: "No active bet found for this round." });
+    const cashoutTime = Date.now();
+    const crashDeadline = new Date(round.flightStartedAt).getTime() + Number(round.crashAtSeconds) * 1000;
+    if (cashoutTime >= crashDeadline) {
+      await tickAviatorRound();
+      return res.status(409).json({ error: "Too late — this round has crashed." });
+    }
+    const multiplier = aviatorMultiplierAt(round.flightStartedAt, cashoutTime);
+    const payout = Math.floor(bet.stake * multiplier);
+    let updatedUser = null;
+    let accepted = false;
+    await session.withTransaction(async () => {
+      const claimed = await aviatorGlobalCollection.updateOne(
+        { _id: "current", roundId: round.roundId, phase: "flying", bets: { $elemMatch: { betId: bet.betId, status: "active" } } },
+        { $set: { "bets.$.status": "won", "bets.$.payout": payout, "bets.$.finalMultiplier": multiplier, "bets.$.cashedOutAt": new Date(cashoutTime).toISOString() } },
+        { session }
+      );
+      if (!claimed.modifiedCount) return;
+      const credited = await stateCollection.updateOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { $inc: { "users.$.points": payout } },
+        { session }
+      );
+      if (!credited.modifiedCount) throw new Error("Cashout balance credit failed");
+      const state = await stateCollection.findOne(
+        { _id: "main", users: { $elemMatch: { id: req.user.id } } },
+        { session, projection: { users: 1 } }
+      );
+      updatedUser = state?.users?.find(u => u.id === req.user.id) || null;
+      accepted = !!updatedUser;
+      if (!accepted) throw new Error("Cashout user balance could not be read");
+    });
+    if (!accepted) return res.status(409).json({ error: "Cash out was not accepted. Check the round status." });
+    await saveAviatorHistory(round, bet, "won", multiplier, payout);
+    res.json({ result: "won", round: { id: round.roundId, stake: bet.stake, status: "won", finalMultiplier: multiplier, payout }, user: safeUser(updatedUser) });
+  } catch (error) { next(error); }
+  finally { await session.endSession(); }
+});
+
+// THERUNDOWN API — ADMIN-ONLY TEST ROUTES
+// Free-plan data stays private for internal testing; do not expose it on public match pages.
+const rundownCache = new Map();
+let rundownLastRequestAt = 0;
+
+async function rundownGet(url) {
+  const apiKey = process.env.THERUNDOWN_API_KEY;
+  if (!apiKey) {
+    const error = new Error("THERUNDOWN_API_KEY is not configured");
+    error.status = 503;
+    throw error;
+  }
+
+  const cached = rundownCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const waitMs = Math.max(0, 1100 - (Date.now() - rundownLastRequestAt));
+  if (waitMs) await new Promise(resolve => setTimeout(resolve, waitMs));
+  rundownLastRequestAt = Date.now();
+
+  const response = await fetch(url, {
+    headers: { "X-TheRundown-Key": apiKey },
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const raw = await response.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { data = { raw }; }
+
+  if (!response.ok) {
+    const error = new Error(data?.message || data?.error || `TheRundown returned HTTP ${response.status}`);
+    error.status = response.status === 429 ? 429 : 502;
+    error.providerStatus = response.status;
+    throw error;
+  }
+
+  const result = {
+    data,
+    usage: {
+      datapoints: response.headers.get("x-datapoints"),
+      remaining: response.headers.get("x-datapoints-remaining"),
+      delaySeconds: response.headers.get("x-data-delay-seconds")
+    }
+  };
+  rundownCache.set(url, { data: result, expiresAt: Date.now() + 60000 });
+  return result;
+}
+
+app.get("/api/admin/provider/sports", auth, admin, async (req, res, next) => {
+  try {
+    const result = await rundownGet("https://therundown.io/api/v2/sports");
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/provider/events/:sportId/:date", auth, admin, async (req, res, next) => {
+  try {
+    const { sportId, date } = req.params;
+    if (!/^\d+$/.test(sportId) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: "Use a numeric sport ID and date in YYYY-MM-DD format" });
+    }
+    const parsedDate = new Date(date + "T00:00:00Z");
+    if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ error: "Invalid date" });
+    }
+
+    const url = new URL(`https://therundown.io/api/v2/sports/${sportId}/events/${date}`);
+    url.searchParams.set("market_ids", "1,2,3");
+    url.searchParams.set("affiliate_ids", "3,19,23");
+    url.searchParams.set("main_line", "true");
+    url.searchParams.set("hide_closed", "true");
+
+    const result = await rundownGet(url.toString());
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ADMIN-ONLY PROVIDER TEST IMPORT — stored separately from public matches.
+// This keeps free-plan provider data out of the public sportsbook endpoints.
+app.post("/api/admin/provider/import-test", auth, admin, async (req, res, next) => {
+  try {
+    const { events, sportId, sportName, date } = req.body || {};
+    if (!Array.isArray(events) || events.length === 0 || events.length > 100) {
+      return res.status(400).json({ error: "Provide 1–100 provider events" });
+    }
+
+    const docs = events.filter(ev => ev && (ev.event_id || ev.event_uuid)).map(ev => ({
+      eventId: String(ev.event_id || ev.event_uuid),
+      sportId: String(sportId || ""),
+      sportName: String(sportName || "Unknown sport"),
+      requestedDate: String(date || ""),
+      event: ev,
+      importedAt: new Date().toISOString(),
+      source: "TheRundown"
+    }));
+
+    if (!docs.length) {
+      return res.status(400).json({ error: "No valid event IDs found in provider response" });
+    }
+
+    let inserted = 0;
+    let existing = 0;
+    for (const doc of docs) {
+      try {
+        await providerTestCollection.updateOne(
+          { eventId: doc.eventId },
+          { $set: { ...doc, lastImportedAt: doc.importedAt }, $setOnInsert: { firstImportedAt: doc.importedAt } },
+          { upsert: true }
+        );
+        inserted++;
+      } catch (error) {
+        if (error.code === 11000) existing++;
+        else throw error;
+      }
+    }
+
+    res.json({ ok: true, saved: inserted, skipped: existing, total: docs.length, storage: "admin-only test collection", publicMatchesChanged: false });
+  } catch (error) {
+    next(error);
+  }
+});
+
+function americanToDecimal(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return Number((n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n)).toFixed(3));
+}
+
+function normalizeProviderEvent(row) {
+  const ev = row.event || {};
+  const teams = ev.teams || [];
+  const away = teams.find(t => t.is_away) || teams[0] || {};
+  const home = teams.find(t => t.is_home) || teams[1] || {};
+  const markets = (ev.markets || []).map(market => {
+    const options = [];
+    (market.participants || []).forEach(participant => {
+      (participant.lines || []).forEach(line => {
+        const prices = Object.entries(line.prices || {});
+        const validPrices = prices.map(([source, quote]) => ({
+          source,
+          american: Number(quote?.price ?? quote),
+          decimal: americanToDecimal(quote?.price ?? quote)
+        })).filter(x => x.decimal !== null);
+        if (!validPrices.length) return;
+        const quote = validPrices[0];
+        const lineText = line.value == null ? "" : " " + line.value;
+        options.push({
+          label: String(participant.name || "Outcome") + lineText,
+          odd: quote.decimal,
+          americanOdds: quote.american,
+          line: line.value ?? null,
+          source: quote.source,
+          availableSources: validPrices.length
+        });
+      });
+    });
+    return {
+      name: String(market.name || market.market_description || "Market"),
+      options
+    };
+  }).filter(m => m.options.length);
+  return {
+    eventId: row.eventId,
+    sport: row.sportName,
+    league: ev.schedule?.league_name || "Unknown league",
+    home: [home.name, home.mascot].filter(Boolean).join(" "),
+    away: [away.name, away.mascot].filter(Boolean).join(" "),
+    start: ev.event_date || null,
+    status: ev.score?.event_status || "Scheduled",
+    markets,
+    normalizedAt: new Date().toISOString(),
+    format: "royalbet-demo-market-v1"
+  };
+}
+
+app.post("/api/admin/provider/normalize-tests", auth, admin, async (req, res, next) => {
+  try {
+    const rows = await providerTestCollection.find({}).toArray();
+    let normalized = 0;
+    let withoutMarkets = 0;
+    for (const row of rows) {
+      const demoMarket = normalizeProviderEvent(row);
+      if (!demoMarket.markets.length) withoutMarkets++;
+      await providerTestCollection.updateOne(
+        { eventId: row.eventId },
+        { $set: { demoMarket } }
+      );
+      normalized++;
+    }
+    res.json({
+      ok: true,
+      normalized,
+      withoutMarkets,
+      storage: "admin-only test collection",
+      publicMatchesChanged: false
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/provider/imported-tests", auth, admin, async (req, res, next) => {
+  try {
+    const rows = await providerTestCollection.find({}, { projection: { eventId: 1, sportId: 1, sportName: 1, requestedDate: 1, importedAt: 1, event: 1, demoMarket: 1, _id: 0 } }).sort({ importedAt: -1 }).limit(100).toArray();
+    res.json({ count: rows.length, events: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// SPORTMONKS — live football data connection test (public match data only)
+let sportmonksTestCache = { expiresAt: 0, data: null };
+app.get("/api/sportmonks/test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    if (sportmonksTestCache.data && sportmonksTestCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksTestCache.data, cached: true });
+    }
+
+    const response = await fetch(
+      "https://api.sportmonks.com/v3/football/livescores?include=participants;scores;state;league",
+      {
+        headers: { Authorization: apiToken, Accept: "application/json" },
+        signal: AbortSignal.timeout(15000)
+      }
+    );
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Sportmonks API returned HTTP", response.status);
+      return res.status(response.status === 429 ? 429 : 502).json({
+        ok: false,
+        error: payload?.message || payload?.errors?.[0]?.detail || `Sportmonks API returned HTTP ${response.status}`
+      });
+    }
+
+    const fixtures = Array.isArray(payload.data) ? payload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks",
+      endpoint: "football/livescores",
+      liveMatches: fixtures.length,
+      sample: fixtures.slice(0, 5).map(fixture => ({
+        id: fixture.id,
+        name: fixture.name,
+        startingAt: fixture.starting_at,
+        state: fixture.state?.name || fixture.state_id || null,
+        league: fixture.league?.name || null,
+        participants: (fixture.participants || []).map(team => ({
+          name: team.name,
+          meta: team.meta?.location || null
+        })),
+        scores: fixture.scores || []
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+
+    sportmonksTestCache = { data: result, expiresAt: Date.now() + 30000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// SPORTMONKS — Cricket API access test (live scores + upcoming fixtures)
+let sportmonksCricketTestCache = { expiresAt: 0, data: null };
+app.get("/api/sportmonks/cricket-test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    if (sportmonksCricketTestCache.data && sportmonksCricketTestCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksCricketTestCache.data, cached: true });
+    }
+
+    const startDate = new Date().toISOString().slice(0, 10);
+    const end = new Date();
+    end.setUTCDate(end.getUTCDate() + 30);
+    const endDate = end.toISOString().slice(0, 10);
+    const headers = { Authorization: apiToken, Accept: "application/json" };
+
+    const [liveResponse, fixturesResponse] = await Promise.all([
+      fetch("https://api.sportmonks.com/v3/cricket/livescores?include=participants;scores;state;league", {
+        headers, signal: AbortSignal.timeout(15000)
+      }),
+      fetch(`https://api.sportmonks.com/v3/cricket/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`, {
+        headers, signal: AbortSignal.timeout(20000)
+      })
+    ]);
+
+    const [livePayload, fixturesPayload] = await Promise.all([
+      liveResponse.json().catch(() => ({})),
+      fixturesResponse.json().catch(() => ({}))
+    ]);
+
+    if (!liveResponse.ok || !fixturesResponse.ok) {
+      const failed = !liveResponse.ok ? { endpoint: "cricket/livescores", response: liveResponse, payload: livePayload } :
+        { endpoint: "cricket/fixtures/between", response: fixturesResponse, payload: fixturesPayload };
+      console.error("Sportmonks Cricket API test failed:", failed.endpoint, failed.response.status);
+      return res.status(failed.response.status === 429 ? 429 : 502).json({
+        ok: false,
+        endpoint: failed.endpoint,
+        providerStatus: failed.response.status,
+        error: failed.payload?.message || failed.payload?.errors?.[0]?.detail || "Sportmonks Cricket API request failed. Check Cricket API plan access."
+      });
+    }
+
+    const live = Array.isArray(livePayload.data) ? livePayload.data : [];
+    const fixtures = Array.isArray(fixturesPayload.data) ? fixturesPayload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks Cricket",
+      dateRange: { start: startDate, end: endDate },
+      liveMatches: live.length,
+      upcomingMatches: fixtures.length,
+      liveSample: live.slice(0, 5).map(f => ({
+        id: f.id, name: f.name, startingAt: f.starting_at,
+        state: f.state?.name || f.state_id || null,
+        league: f.league?.name || null,
+        participants: (f.participants || []).map(p => p.name),
+        scores: f.scores || []
+      })),
+      upcomingSample: fixtures.slice(0, 10).map(f => ({
+        id: f.id, name: f.name, startingAt: f.starting_at,
+        state: f.state?.name || f.state_id || null,
+        league: f.league?.name || null,
+        participants: (f.participants || []).map(p => p.name)
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    sportmonksCricketTestCache = { data: result, expiresAt: Date.now() + 60000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// CRICAPI — verify Cricket API key and retrieve current/upcoming matches
+let cricApiTestCache = { expiresAt: 0, data: null };
+app.get("/api/cricket/test", async (req, res, next) => {
+  try {
+    const apiKey = process.env.CRICAPI_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ ok: false, error: "CRICAPI_KEY is not configured on the backend." });
+    }
+    if (cricApiTestCache.data && cricApiTestCache.expiresAt > Date.now()) {
+      return res.json({ ...cricApiTestCache.data, cached: true });
+    }
+
+    const headers = { Accept: "application/json" };
+    const urls = [
+      `https://api.cricapi.com/v1/currentMatches?apikey=${encodeURIComponent(apiKey)}&offset=0`,
+      `https://api.cricapi.com/v1/matches?apikey=${encodeURIComponent(apiKey)}&offset=0`
+    ];
+    const responses = await Promise.all(urls.map(url =>
+      fetch(url, { headers, signal: AbortSignal.timeout(15000) })
+    ));
+    const payloads = await Promise.all(responses.map(response =>
+      response.json().catch(() => ({}))
+    ));
+
+    const current = payloads[0];
+    const allMatches = payloads[1];
+    const currentOk = responses[0].ok && current.status !== "failure" && Array.isArray(current.data);
+    const matchesOk = responses[1].ok && allMatches.status !== "failure" && Array.isArray(allMatches.data);
+
+    if (!currentOk && !matchesOk) {
+      const failed = current?.reason || current?.message || allMatches?.reason || allMatches?.message ||
+        `Provider returned HTTP ${responses[0].status}/${responses[1].status}`;
+      return res.status(502).json({
+        ok: false,
+        provider: "CricAPI",
+        error: String(failed).slice(0, 300)
+      });
+    }
+
+    const live = currentOk ? current.data : [];
+    const matches = matchesOk ? allMatches.data : [];
+    const result = {
+      ok: true,
+      provider: "CricAPI",
+      currentMatches: live.length,
+      matchList: matches.length,
+      liveSample: live.slice(0, 8).map(m => ({
+        id: m.id || m.unique_id || null,
+        name: m.name || m.title || null,
+        status: m.status || null,
+        matchType: m.matchType || null,
+        venue: m.venue || null,
+        date: m.date || m.dateTimeGMT || null,
+        teams: m.teams || [],
+        score: m.score || []
+      })),
+      upcomingSample: matches.filter(m => /upcoming|fixture|not started/i.test(String(m.status || ""))).slice(0, 8).map(m => ({
+        id: m.id || m.unique_id || null,
+        name: m.name || m.title || null,
+        status: m.status || null,
+        matchType: m.matchType || null,
+        venue: m.venue || null,
+        date: m.date || m.dateTimeGMT || null,
+        teams: m.teams || []
+      })),
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    cricApiTestCache = { data: result, expiresAt: Date.now() + 60000 };
+    return res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// SPORTMONKS — upcoming football fixtures test (next 30 days by default)
+let sportmonksUpcomingCache = { key: "", expiresAt: 0, data: null };
+app.get("/api/sportmonks/upcoming-test", async (req, res, next) => {
+  try {
+    const apiToken = process.env.SPORTMONKS_API_TOKEN;
+    if (!apiToken) {
+      return res.status(503).json({ ok: false, error: "SPORTMONKS_API_TOKEN is not configured on the backend." });
+    }
+
+    const startDate = String(req.query.start || new Date().toISOString().slice(0, 10));
+    const endDate = String(req.query.end || (() => {
+      const date = new Date(startDate + "T00:00:00Z");
+      date.setUTCDate(date.getUTCDate() + 30);
+      return date.toISOString().slice(0, 10);
+    })());
+    const validDate = value => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const date = new Date(value + "T00:00:00Z");
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    };
+    if (!validDate(startDate) || !validDate(endDate) || endDate < startDate) {
+      return res.status(400).json({ ok: false, error: "Use valid start/end dates in YYYY-MM-DD format; end must not be before start." });
+    }
+    const spanDays = (new Date(endDate + "T00:00:00Z") - new Date(startDate + "T00:00:00Z")) / 86400000;
+    if (spanDays > 30) {
+      return res.status(400).json({ ok: false, error: "Date range cannot exceed 30 days." });
+    }
+
+    const cacheKey = startDate + ":" + endDate;
+    if (sportmonksUpcomingCache.key === cacheKey && sportmonksUpcomingCache.data && sportmonksUpcomingCache.expiresAt > Date.now()) {
+      return res.json({ ...sportmonksUpcomingCache.data, cached: true });
+    }
+
+    const endpoint = `https://api.sportmonks.com/v3/football/fixtures/between/${startDate}/${endDate}?include=participants;league;state&per_page=50`;
+    const response = await fetch(endpoint, {
+      headers: { Authorization: apiToken, Accept: "application/json" },
+      signal: AbortSignal.timeout(20000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Sportmonks upcoming fixtures returned HTTP", response.status);
+      return res.status(response.status === 429 ? 429 : 502).json({
+        ok: false,
+        error: payload?.message || payload?.errors?.[0]?.detail || `Sportmonks API returned HTTP ${response.status}`
+      });
+    }
+
+    const fixtures = Array.isArray(payload.data) ? payload.data : [];
+    const result = {
+      ok: true,
+      provider: "Sportmonks",
+      endpoint: "football/fixtures/between",
+      dateRange: { start: startDate, end: endDate },
+      upcomingMatches: fixtures.length,
+      sample: fixtures.slice(0, 10).map(fixture => ({
+        id: fixture.id,
+        name: fixture.name,
+        startingAt: fixture.starting_at,
+        state: fixture.state?.name || fixture.state_id || null,
+        league: fixture.league?.name || null,
+        participants: (fixture.participants || []).map(team => ({
+          name: team.name,
+          location: team.meta?.location || null
+        }))
+      })),
+      pagination: payload.pagination || null,
+      checkedAt: new Date().toISOString(),
+      cached: false
+    };
+    sportmonksUpcomingCache = { key: cacheKey, data: result, expiresAt: Date.now() + 60000 };
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ERROR HANDLER
+app.use((error, req, res, next) => {
+  console.error("API Error:", error);
+
+  res.status(error.status || 500).json({
+    error: error.status ? error.message : "Server error. Please try again."
+  });
+});
+
+// START SERVER
+async function startServer() {
+  try {
+    await initializeDatabase();
+    await tickAviatorRound();
+    setInterval(() => tickAviatorRound().catch(error => console.error("Aviator round tick failed:", error)), 250);
+
+    app.listen(PORT, () => {
+      console.log(`ROYAL BET API running on ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Server startup failed:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
