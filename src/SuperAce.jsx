@@ -53,7 +53,7 @@ export default function SuperAce({api,user}){
  const autoRef=useRef(false),timerRef=useRef(null),soundRef=useRef(null);
  async function load(){try{const c=await api("/api/super-ace/config");setConfig(c);setAdminMode(c.mode||"fair");setAdminChance(Number(c.winChance||20));}catch{setNotice("Game settings load hoyni. Backend check koro.");}}
  useEffect(()=>{load();return()=>clearTimeout(timerRef.current)},[]);
- function saveCredits(n){setCredits(n);localStorage.setItem("sa_demo_credits",String(n));}
+ function saveCredits(n){setCredits(n);localStorage.setItem("sa_demo_credits",String(n));window.dispatchEvent(new Event("royal-demo-wallet"));}
  function tone(freq=520,duration=.12){if(!sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!soundRef.current)soundRef.current=new C();const c=soundRef.current,o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.04,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+duration)}catch{}}
  async function saveConfig(){setSaving(true);try{const c=await api("/api/admin/super-ace-config",{method:"POST",body:JSON.stringify({mode:adminMode,winChance:Number(adminChance),enabled:config.enabled})});setConfig(c);setNotice("Game settings saved.");}catch(e){setNotice(e.message||"Settings save hoyni.");}finally{setSaving(false)}}
  async function toggleGame(){setSaving(true);try{const c=await api("/api/admin/super-ace-config",{method:"POST",body:JSON.stringify({mode:adminMode,winChance:Number(adminChance),enabled:!config.enabled})});setConfig(c);setNotice(c.enabled?"Game enabled.":"Game disabled.");}catch(e){setNotice(e.message||"Update failed.");}finally{setSaving(false)}}
